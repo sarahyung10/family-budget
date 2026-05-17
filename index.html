@@ -7,366 +7,156 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="家計簿">
 <title>家庭記帳</title>
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#F5F2ED; --card:#FFFDF9; --border:#E0D8CE;
+  --dark:#3D3530; --mid:#7A6E65; --light:#9E8E7E;
+  --muted:#B0A898; --pale:#C8BEAF;
+  --green:#5C7A6E; --brown:#8B7355; --amber:#C4956A;
+  --blue:#7B9EA8; --red:#C4765A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Serif TC','Hiragino Mincho ProN',serif;background:var(--bg);color:var(--dark);min-height:100vh;min-height:-webkit-fill-available;overscroll-behavior:none}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--pale);border-radius:2px}
 
-  :root {
-    --bg: #F5F2ED;
-    --card: #FFFDF9;
-    --border: #E0D8CE;
-    --dark: #3D3530;
-    --mid: #7A6E65;
-    --light: #9E8E7E;
-    --muted: #B0A898;
-    --pale: #C8BEAF;
-    --green: #5C7A6E;
-    --brown: #8B7355;
-    --amber: #C4956A;
-    --blue: #7B9EA8;
-    --red: #C4765A;
-  }
+/* SVG icons */
+.ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ico svg{display:block}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* Header */
+#header{background:var(--dark);color:#F5F2ED;padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.header-title-sub{font-size:10px;letter-spacing:5px;opacity:.4;margin-bottom:3px}
+.header-title{font-size:20px;font-weight:600;letter-spacing:2px}
+.month-nav{display:flex;align-items:center}
+.arr{cursor:pointer;user-select:none;padding:4px 10px;opacity:.45;font-size:22px;line-height:1;transition:opacity .2s;color:#F5F2ED}
+.arr:hover,.arr:active{opacity:1}
+#month-label{font-size:13px;letter-spacing:2px;min-width:52px;text-align:center}
+.btn-add{background:var(--green);color:#F5F2ED;border:none;border-radius:4px;padding:8px 14px;font-size:13px;letter-spacing:2px;cursor:pointer;font-family:inherit;transition:all .22s}
+.btn-add.cancel{background:var(--amber)}
+.btn-add:active{transform:translateY(1px)}
 
-  body {
-    font-family: 'Noto Serif TC', 'Hiragino Mincho ProN', serif;
-    background: var(--bg);
-    color: var(--dark);
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    overscroll-behavior: none;
-  }
+/* Main */
+#main{max-width:480px;margin:0 auto;padding-bottom:80px}
 
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-thumb { background: var(--pale); border-radius: 2px; }
+/* Total card */
+#total-card{background:var(--dark);color:#F5F2ED;border-radius:6px;padding:20px 22px;margin:16px 16px 0}
+#total-card .lbl{font-size:10px;letter-spacing:5px;opacity:.4;margin-bottom:10px}
+#total-amount{font-size:32px;font-weight:600;letter-spacing:1px}
 
-  /* Header */
-  #header {
-    background: var(--dark);
-    color: #F5F2ED;
-    padding: 52px 20px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,.15);
-  }
-  .header-title-sub { font-size: 10px; letter-spacing: 5px; opacity: .4; margin-bottom: 3px; }
-  .header-title { font-size: 20px; font-weight: 600; letter-spacing: 2px; }
+/* Chart card */
+.card{margin:12px 16px 0;background:var(--card);border-radius:6px;border:1px solid var(--border);padding:20px 16px}
+.card-label{font-size:10px;letter-spacing:4px;color:var(--light);margin-bottom:12px}
+#chart-wrap{position:relative;width:180px;height:180px;margin:0 auto}
+#chart-legend{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:8px}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.legend-name{font-size:11px;color:var(--mid);letter-spacing:1px}
+.legend-val{font-size:11px;color:var(--muted)}
+.empty-chart{padding:36px 0;text-align:center;color:var(--muted);font-size:13px;letter-spacing:2px}
 
-  .month-nav { display: flex; align-items: center; }
-  .arr {
-    cursor: pointer; user-select: none; padding: 4px 10px;
-    opacity: .45; font-size: 22px; line-height: 1;
-    transition: opacity .2s; color: #F5F2ED;
-  }
-  .arr:hover, .arr:active { opacity: 1; }
-  #month-label { font-size: 13px; letter-spacing: 2px; min-width: 52px; text-align: center; }
+/* Records */
+#records-list{margin:12px 16px 0}
+.list-header{font-size:10px;letter-spacing:4px;color:var(--light);margin-bottom:10px}
+.hint{font-size:9px;opacity:.55;margin-left:8px}
+.empty{color:var(--muted);font-size:13px;letter-spacing:2px;text-align:center;padding:24px 0}
 
-  .btn-add {
-    background: var(--green); color: #F5F2ED; border: none;
-    border-radius: 4px; padding: 8px 14px; font-size: 13px;
-    letter-spacing: 2px; cursor: pointer;
-    font-family: inherit; transition: all .22s;
-  }
-  .btn-add.cancel { background: var(--amber); }
-  .btn-add:active { transform: translateY(1px); }
+/* Swipe row */
+.swipe-outer{position:relative;overflow:hidden;border-left:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.swipe-outer.first{border-top:1px solid var(--border);border-radius:6px 6px 0 0}
+.swipe-outer.last{border-radius:0 0 6px 6px}
+.swipe-outer.only{border-top:1px solid var(--border);border-radius:6px}
+.swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:stretch}
+.swipe-btn{width:70px;border:none;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:2px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.swipe-btn.edit{background:var(--blue)}
+.swipe-btn.delete{background:var(--red)}
+.swipe-btn svg{opacity:.9}
+.swipe-inner{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);position:relative;z-index:1;transition:transform .25s ease;touch-action:pan-y}
 
-  /* Main */
-  #main { max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+/* Record icon circle */
+.rec-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rec-info{flex:1;min-width:0}
+.rec-note{font-size:13px;color:var(--dark);letter-spacing:1px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-meta{font-size:10px;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:4px}
+.rec-user{font-size:11px;border-radius:10px;padding:2px 8px;letter-spacing:1px;flex-shrink:0}
+.rec-amount{font-size:15px;font-weight:600;color:var(--dark);letter-spacing:1px;flex-shrink:0;min-width:56px;text-align:right}
 
-  /* Card */
-  .card {
-    margin: 12px 16px 0;
-    background: var(--card);
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    padding: 20px 16px;
-  }
-  .card-label {
-    font-size: 10px; letter-spacing: 4px;
-    color: var(--light); margin-bottom: 12px;
-  }
+/* Form */
+#form-wrap{margin:20px 16px;background:var(--card);border-radius:6px;border:1px solid var(--border);padding:24px 20px;animation:fadeIn .2s ease}
+.form-title{font-size:10px;letter-spacing:4px;color:var(--light);margin-bottom:20px}
+.field{margin-bottom:16px}
+.field-label{font-size:10px;letter-spacing:3px;color:var(--light);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none}
+.field-link{font-size:10px;color:var(--blue);letter-spacing:2px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.btn-row{display:flex;gap:10px}
 
-  /* Total card */
-  #total-card {
-    background: var(--dark); color: #F5F2ED;
-    border-radius: 6px; padding: 20px 22px;
-    margin: 16px 16px 0;
-  }
-  #total-card .lbl { font-size: 10px; letter-spacing: 5px; opacity: .4; margin-bottom: 10px; }
-  #total-amount { font-size: 32px; font-weight: 600; letter-spacing: 1px; }
+/* Toggle buttons — user / payment */
+.toggle-btn{flex:1;padding:10px 0;border-radius:4px;border:1.5px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:13px;letter-spacing:2px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.toggle-btn.active-green{border-color:var(--green);background:var(--green);color:#fff}
+.toggle-btn.active-green svg *{stroke:#fff}
+.toggle-btn.active-brown{border-color:var(--brown);background:var(--brown);color:#fff}
+.toggle-btn.active-brown svg *{stroke:#fff}
+.toggle-btn.active-blue{border-color:var(--blue);background:rgba(123,158,168,.13);color:var(--blue)}
+.toggle-btn.active-blue svg *{stroke:var(--blue)}
 
-  /* Pie */
-  #chart-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto; }
-  #chart-legend {
-    display: flex; flex-wrap: wrap;
-    gap: 5px 14px; margin-top: 8px;
-  }
-  .legend-item { display: flex; align-items: center; gap: 5px; }
-  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .legend-name { font-size: 11px; color: var(--mid); letter-spacing: 1px; }
-  .legend-val  { font-size: 11px; color: var(--muted); }
+/* Category chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.cat-chip-wrap{display:flex}
+.cat-main-btn{padding:7px 8px 7px 10px;border-radius:20px 0 0 20px;border:1.5px solid var(--border);border-right:none;background:transparent;color:var(--light);font-family:inherit;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.cat-edit-btn{padding:7px 8px;border-radius:0 20px 20px 0;border:1.5px solid var(--border);background:transparent;color:var(--pale);font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center}
+.cat-main-btn:active,.cat-edit-btn:active{opacity:.7}
 
-  /* Records */
-  #records-list { margin: 12px 16px 0; }
-  .list-header {
-    font-size: 10px; letter-spacing: 4px;
-    color: var(--light); margin-bottom: 10px;
-  }
-  .hint { font-size: 9px; opacity: .55; margin-left: 8px; }
-  .empty { color: var(--muted); font-size: 13px; letter-spacing: 2px; text-align: center; padding: 24px 0; }
+/* Sub chips */
+.sub-chip{padding:5px 12px;border-radius:16px;border:1.5px solid #E8E2DA;background:transparent;color:var(--muted);font-family:inherit;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .15s}
 
-  /* Swipe row */
-  .swipe-outer {
-    position: relative; overflow: hidden;
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-  .swipe-outer.first { border-top: 1px solid var(--border); border-radius: 6px 6px 0 0; }
-  .swipe-outer.last  { border-radius: 0 0 6px 6px; }
-  .swipe-outer.only  { border-top: 1px solid var(--border); border-radius: 6px; }
+input[type=text],input[type=number],input[type=date]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:4px;background:#FAF8F5;font-family:inherit;font-size:14px;color:var(--dark);-webkit-appearance:none;appearance:none}
+input[type=number]{font-size:22px}
+input:focus{outline:none;border-color:#8FAF8A}
 
-  .swipe-actions {
-    position: absolute; right: 0; top: 0; bottom: 0;
-    display: flex; align-items: stretch;
-  }
-  .swipe-btn {
-    width: 70px; border: none; cursor: pointer;
-    font-family: inherit; font-size: 12px; letter-spacing: 2px; color: #fff;
-  }
-  .swipe-btn.edit   { background: var(--blue); }
-  .swipe-btn.delete { background: var(--red); }
+.btn-save{width:100%;padding:13px 0;border:none;border-radius:4px;background:var(--green);color:#F5F2ED;font-size:14px;letter-spacing:4px;font-family:inherit;cursor:pointer;transition:background .3s}
+.btn-save.saved{background:#8FAF8A}
+.btn-save:active{opacity:.85}
 
-  .swipe-inner {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; background: var(--card);
-    position: relative; z-index: 1;
-    transition: transform .25s ease;
-    touch-action: pan-y;
-  }
+/* Manage / EditCat */
+#manage-wrap,#editcat-wrap{margin:20px 16px;background:var(--card);border-radius:6px;border:1px solid var(--border);padding:24px 20px;animation:fadeIn .2s ease}
+.panel-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.panel-sub{font-size:10px;letter-spacing:3px;color:var(--light)}
+.panel-name{font-size:16px;font-weight:600;letter-spacing:2px}
+.sub-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;min-height:36px}
+.sub-tag{display:flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;border-radius:16px;font-size:12px;letter-spacing:1px}
+.sub-tag-del{color:var(--pale);cursor:pointer;font-size:15px;line-height:1;background:none;border:none;font-family:inherit;transition:color .15s}
+.sub-tag-del:hover{color:var(--amber)}
+.input-row{display:flex;gap:8px;margin-bottom:16px}
+.input-row input{flex:1;font-size:13px}
+.btn-small{padding:9px 16px;border:none;border-radius:4px;color:#fff;font-family:inherit;font-size:13px;letter-spacing:2px;cursor:pointer;white-space:nowrap}
+.btn-back{width:100%;padding:11px 0;background:transparent;color:var(--mid);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:13px;letter-spacing:3px;cursor:pointer}
 
-  .rec-icon {
-    width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; flex-shrink: 0;
-  }
-  .rec-info { flex: 1; min-width: 0; }
-  .rec-note {
-    font-size: 13px; color: var(--dark); letter-spacing: 1px;
-    margin-bottom: 3px; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap;
-  }
-  .rec-meta { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
-  .rec-user {
-    font-size: 11px; border-radius: 10px;
-    padding: 2px 8px; letter-spacing: 1px; flex-shrink: 0;
-  }
-  .rec-amount {
-    font-size: 15px; font-weight: 600; color: var(--dark);
-    letter-spacing: 1px; flex-shrink: 0;
-    min-width: 56px; text-align: right;
-  }
+/* Icon / Color picker */
+.icon-grid{display:flex;flex-wrap:wrap;gap:6px}
+.icon-opt{width:44px;height:44px;border-radius:8px;cursor:pointer;transition:background .15s;background:transparent;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center}
+.icon-opt:hover{background:rgba(0,0,0,.05)}
+.icon-opt.sel{background:rgba(0,0,0,.07);border-color:var(--pale)}
+.color-grid{display:flex;flex-wrap:wrap;gap:8px}
+.color-opt{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s}
+.color-opt:hover{transform:scale(1.15)}
+.color-opt.sel{border-color:var(--dark)}
+.editcat-btns{display:flex;gap:10px;margin-top:8px}
+.btn-danger{padding:12px 16px;background:transparent;color:var(--red);border:1px solid var(--red);border-radius:4px;font-family:inherit;font-size:13px;letter-spacing:2px;cursor:pointer}
+.btn-primary{flex:1;padding:12px 0;background:var(--green);color:#F5F2ED;border:none;border-radius:4px;font-family:inherit;font-size:13px;letter-spacing:3px;cursor:pointer}
 
-  /* Form */
-  #form-wrap {
-    margin: 20px 16px;
-    background: var(--card);
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    padding: 24px 20px;
-    animation: fadeIn .2s ease;
-  }
-  .form-title { font-size: 10px; letter-spacing: 4px; color: var(--light); margin-bottom: 20px; }
+#loading{text-align:center;padding:60px 0;color:var(--muted);font-size:13px;letter-spacing:3px}
 
-  .field { margin-bottom: 16px; }
-  .field-label {
-    font-size: 10px; letter-spacing: 3px; color: var(--light);
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 8px; user-select: none;
-  }
-  .field-link {
-    font-size: 10px; color: var(--blue); letter-spacing: 2px;
-    cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
-  }
-
-  .btn-row { display: flex; gap: 10px; }
-  .toggle-btn {
-    flex: 1; padding: 10px 0; border-radius: 4px;
-    border: 1.5px solid var(--border); background: transparent;
-    color: var(--mid); font-family: inherit;
-    font-size: 14px; letter-spacing: 2px; cursor: pointer;
-    transition: all .15s;
-  }
-  .toggle-btn.active-green { border-color: var(--green); background: var(--green); color: #fff; }
-  .toggle-btn.active-brown { border-color: var(--brown); background: var(--brown); color: #fff; }
-  .toggle-btn.active-blue  { border-color: var(--blue); background: rgba(123,158,168,.13); color: var(--blue); }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
-  .chip {
-    padding: 6px 12px; border-radius: 20px;
-    border: 1.5px solid var(--border); background: transparent;
-    color: var(--light); font-family: inherit;
-    font-size: 12px; letter-spacing: 1px; cursor: pointer;
-    transition: all .15s; white-space: nowrap;
-  }
-  .chip:active { opacity: .7; }
-
-  /* Cat chip with edit btn */
-  .cat-chip-wrap { display: flex; }
-  .cat-main-btn {
-    padding: 6px 8px 6px 12px; border-radius: 20px 0 0 20px;
-    border: 1.5px solid var(--border); border-right: none;
-    background: transparent; color: var(--light);
-    font-family: inherit; font-size: 12px; letter-spacing: 1px;
-    cursor: pointer; transition: all .15s; white-space: nowrap;
-  }
-  .cat-edit-btn {
-    padding: 6px 8px; border-radius: 0 20px 20px 0;
-    border: 1.5px solid var(--border);
-    background: transparent; color: var(--pale);
-    font-family: inherit; font-size: 11px;
-    cursor: pointer; transition: all .15s;
-  }
-  .cat-main-btn:active, .cat-edit-btn:active { opacity: .7; }
-
-  .sub-chip {
-    padding: 5px 12px; border-radius: 16px;
-    border: 1.5px solid #E8E2DA; background: transparent;
-    color: var(--muted); font-family: inherit;
-    font-size: 12px; letter-spacing: 1px; cursor: pointer;
-    transition: all .15s;
-  }
-
-  input[type=text], input[type=number], input[type=date] {
-    width: 100%; padding: 10px 14px;
-    border: 1px solid var(--border); border-radius: 4px;
-    background: #FAF8F5; font-family: inherit;
-    font-size: 14px; color: var(--dark);
-    -webkit-appearance: none; appearance: none;
-  }
-  input[type=number] { font-size: 22px; }
-  input:focus { outline: none; border-color: #8FAF8A; }
-
-  .btn-save {
-    width: 100%; padding: 13px 0; border: none; border-radius: 4px;
-    background: var(--green); color: #F5F2ED;
-    font-size: 14px; letter-spacing: 4px;
-    font-family: inherit; cursor: pointer;
-    transition: background .3s;
-  }
-  .btn-save.saved { background: #8FAF8A; }
-  .btn-save:active { opacity: .85; }
-
-  /* Manage / EditCat panels */
-  #manage-wrap, #editcat-wrap {
-    margin: 20px 16px;
-    background: var(--card);
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    padding: 24px 20px;
-    animation: fadeIn .2s ease;
-  }
-  .panel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-  .panel-icon { font-size: 22px; }
-  .panel-sub  { font-size: 10px; letter-spacing: 3px; color: var(--light); }
-  .panel-name { font-size: 16px; font-weight: 600; letter-spacing: 2px; }
-
-  .sub-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 36px; }
-  .sub-tag {
-    display: flex; align-items: center; gap: 6px;
-    padding: 5px 10px 5px 12px; border-radius: 16px;
-    font-size: 12px; letter-spacing: 1px;
-  }
-  .sub-tag-del {
-    color: var(--pale); cursor: pointer; font-size: 15px;
-    line-height: 1; background: none; border: none;
-    font-family: inherit; transition: color .15s;
-  }
-  .sub-tag-del:hover { color: var(--amber); }
-
-  .input-row { display: flex; gap: 8px; margin-bottom: 16px; }
-  .input-row input { flex: 1; font-size: 13px; }
-  .btn-small {
-    padding: 9px 16px; border: none; border-radius: 4px;
-    color: #fff; font-family: inherit; font-size: 13px;
-    letter-spacing: 2px; cursor: pointer; white-space: nowrap;
-  }
-  .btn-back {
-    width: 100%; padding: 11px 0; background: transparent;
-    color: var(--mid); border: 1px solid var(--border);
-    border-radius: 4px; font-family: inherit;
-    font-size: 13px; letter-spacing: 3px; cursor: pointer;
-  }
-
-  /* Icon / color picker */
-  .icon-grid { display: flex; flex-wrap: wrap; gap: 4px; }
-  .icon-opt {
-    font-size: 20px; padding: 6px 8px; border-radius: 6px;
-    cursor: pointer; transition: background .15s;
-    background: transparent; border: none;
-  }
-  .icon-opt:hover, .icon-opt.sel { background: rgba(0,0,0,.07); }
-  .color-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-  .color-opt {
-    width: 26px; height: 26px; border-radius: 50%;
-    cursor: pointer; border: 2px solid transparent;
-    transition: transform .15s;
-  }
-  .color-opt:hover { transform: scale(1.15); }
-  .color-opt.sel { border-color: var(--dark); }
-
-  .editcat-btns { display: flex; gap: 10px; margin-top: 8px; }
-  .btn-danger {
-    padding: 12px 16px; background: transparent;
-    color: var(--red); border: 1px solid var(--red);
-    border-radius: 4px; font-family: inherit;
-    font-size: 13px; letter-spacing: 2px; cursor: pointer;
-  }
-  .btn-primary {
-    flex: 1; padding: 12px 0; background: var(--green);
-    color: #F5F2ED; border: none; border-radius: 4px;
-    font-family: inherit; font-size: 13px;
-    letter-spacing: 3px; cursor: pointer;
-  }
-
-  /* Loading */
-  #loading {
-    text-align: center; padding: 60px 0;
-    color: var(--muted); font-size: 13px; letter-spacing: 3px;
-  }
-
-  /* Empty pie */
-  .empty-chart {
-    padding: 36px 0; text-align: center;
-    color: var(--muted); font-size: 13px; letter-spacing: 2px;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* iOS safe area */
-  @supports (padding-top: env(safe-area-inset-top)) {
-    #header { padding-top: max(52px, calc(env(safe-area-inset-top) + 14px)); }
-  }
+@keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+@supports (padding-top:env(safe-area-inset-top)){
+  #header{padding-top:max(52px,calc(env(safe-area-inset-top) + 14px))}
+}
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div id="header">
   <div>
     <div class="header-title-sub">家計簿</div>
@@ -383,51 +173,55 @@
 <div id="main">
   <div id="loading">載入中…</div>
 
-  <!-- Dashboard -->
   <div id="dashboard" style="display:none">
     <div id="total-card">
       <div class="lbl">本月總支出</div>
       <div id="total-amount">NT$ 0</div>
     </div>
-
     <div class="card" id="chart-card" style="display:none">
       <div class="card-label">支出分析</div>
       <div id="chart-wrap"><canvas id="pieChart"></canvas></div>
       <div id="chart-legend"></div>
     </div>
     <div class="card empty-chart" id="chart-empty" style="display:none">本月尚無記錄</div>
-
     <div id="records-list">
-      <div class="list-header">
-        明細記錄<span class="hint">← 左滑可編輯／刪除</span>
-      </div>
+      <div class="list-header">明細記錄<span class="hint">← 左滑可編輯／刪除</span></div>
       <div id="records-inner"></div>
     </div>
   </div>
 
-  <!-- Add / Edit Form -->
+  <!-- Form -->
   <div id="form-wrap" style="display:none">
     <div class="form-title" id="form-title">新增支出</div>
-
-    <!-- 記帳人 -->
     <div class="field">
       <div class="field-label">記帳人</div>
       <div class="btn-row">
-        <button class="toggle-btn" id="btn-me" onclick="setUser('me')">淯</button>
-        <button class="toggle-btn" id="btn-husband" onclick="setUser('husband')">達</button>
+        <button class="toggle-btn" id="btn-me" onclick="setUser('me')">
+          <!-- person icon -->
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          淯
+        </button>
+        <button class="toggle-btn" id="btn-husband" onclick="setUser('husband')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          達
+        </button>
       </div>
     </div>
-
-    <!-- 付款方式 -->
     <div class="field">
       <div class="field-label">付款方式</div>
       <div class="btn-row">
-        <button class="toggle-btn" id="btn-cash" onclick="setPayment('cash')">💴 現金</button>
-        <button class="toggle-btn" id="btn-card" onclick="setPayment('card')">💳 刷卡</button>
+        <button class="toggle-btn" id="btn-cash" onclick="setPayment('cash')">
+          <!-- banknote -->
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+          現金
+        </button>
+        <button class="toggle-btn" id="btn-card" onclick="setPayment('card')">
+          <!-- credit card -->
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+          刷卡
+        </button>
       </div>
     </div>
-
-    <!-- 類別 -->
     <div class="field">
       <div class="field-label">
         <span>類別</span>
@@ -435,8 +229,6 @@
       </div>
       <div class="chips" id="cat-chips"></div>
     </div>
-
-    <!-- 子類別 -->
     <div class="field">
       <div class="field-label">
         <span>子類別</span>
@@ -444,32 +236,25 @@
       </div>
       <div class="chips" id="sub-chips"></div>
     </div>
-
-    <!-- 金額 -->
     <div class="field">
       <div class="field-label">金額（NT$）</div>
       <input type="number" id="inp-amount" placeholder="0" inputmode="numeric">
     </div>
-
-    <!-- 備註 -->
     <div class="field">
       <div class="field-label">備註</div>
       <input type="text" id="inp-note" placeholder="記點什麼…">
     </div>
-
-    <!-- 日期 -->
     <div class="field">
       <div class="field-label">日期</div>
       <input type="date" id="inp-date">
     </div>
-
     <button class="btn-save" id="btn-save" onclick="saveRecord()">記　錄</button>
   </div>
 
   <!-- Manage Subs -->
   <div id="manage-wrap" style="display:none">
     <div class="panel-header">
-      <span class="panel-icon" id="manage-icon"></span>
+      <div class="rec-icon" id="manage-icon-circle" style="width:40px;height:40px"></div>
       <div>
         <div class="panel-sub">子類別管理</div>
         <div class="panel-name" id="manage-name"></div>
@@ -477,8 +262,7 @@
     </div>
     <div class="sub-tags" id="sub-tags"></div>
     <div class="input-row">
-      <input type="text" id="inp-newsub" placeholder="輸入子類別名稱…"
-        onkeydown="if(event.key==='Enter') addSub()">
+      <input type="text" id="inp-newsub" placeholder="輸入子類別名稱…" onkeydown="if(event.key==='Enter')addSub()">
       <button class="btn-small" id="btn-addsub" onclick="addSub()">新增</button>
     </div>
     <button class="btn-back" onclick="closeManageSubs()">← 返回記帳</button>
@@ -508,562 +292,426 @@
 </div>
 
 <script>
-// ── Firebase 初始化 ─────────────────────────────────────
+// ── SVG 圖示庫（細線條風格）────────────────────────────
+// 每個類別對應一組 SVG path，統一 viewBox="0 0 24 24" stroke-width=1.4
+const ICONS = {
+  food: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><line x1="7" y1="2" x2="7" y2="11"/><path d="M21 15a6 6 0 01-6 6v-6h6z"/><path d="M21 15V2"/></svg>`,
+  transport: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="17" r="1.5"/><line x1="11" y1="7" x2="11" y2="18"/></svg>`,
+  shopping: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`,
+  medical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+  education: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>`,
+  entertainment: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
+  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  loan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg>`,
+  other: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  // extras for new categories
+  music:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+  pet:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.5a2.5 2.5 0 01-5 0 2.5 2.5 0 015 0z"/><path d="M19 5.5a2.5 2.5 0 01-5 0 2.5 2.5 0 015 0z"/><path d="M22 17.5a7 7 0 01-14 0c0-3.9 3.1-7 7-7s7 3.1 7 7z"/><path d="M6 12.5c-2 .5-4 2-4 5"/></svg>`,
+  travel:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>`,
+  fitness: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v6"/><path d="M18 4v6"/><path d="M6 14v6"/><path d="M18 14v6"/><line x1="2" y1="7" x2="6" y2="7"/><line x1="18" y1="7" x2="22" y2="7"/><line x1="2" y1="17" x2="6" y2="17"/><line x1="18" y1="17" x2="22" y2="17"/><line x1="6" y1="10" x2="18" y2="10"/><line x1="6" y1="14" x2="18" y2="14"/></svg>`,
+  art:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>`,
+  star:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+};
+
+// 類別選擇器用的圖示 key 列表
+const ICON_KEYS = ["food","transport","shopping","medical","education","entertainment","home","loan","other","music","pet","travel","fitness","art","star"];
+const CAT_COLORS = ["#C4956A","#7B9EA8","#A89BB0","#8FAF8A","#B5A07A","#9E8E7E","#7A8F8A","#A07A7A","#B0A898","#8E9E8A","#A8956A"];
+
+// ── Firebase ──────────────────────────────────────────
 const firebaseConfig = {
-  apiKey: "AIzaSyAH_zRnZojdjG77bW0KFAvvubMrnJDijBI",
-  authDomain: "family-budget-book-9d183.firebaseapp.com",
-  databaseURL: "https://family-budget-book-9d183-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "family-budget-book-9d183",
-  storageBucket: "family-budget-book-9d183.firebasestorage.app",
-  messagingSenderId: "738700570774",
-  appId: "1:738700570774:web:844e8a65c4ae072f5652b7"
+  apiKey:"AIzaSyAH_zRnZojdjG77bW0KFAvvubMrnJDijBI",
+  authDomain:"family-budget-book-9d183.firebaseapp.com",
+  databaseURL:"https://family-budget-book-9d183-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"family-budget-book-9d183",
+  storageBucket:"family-budget-book-9d183.firebasestorage.app",
+  messagingSenderId:"738700570774",
+  appId:"1:738700570774:web:844e8a65c4ae072f5652b7"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ── 常數 ────────────────────────────────────────────────
-const USERS = {
-  me:      { label:"淯", color:"#5C7A6E" },
-  husband: { label:"達", color:"#8B7355" },
-};
-const MONTHS = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
-const CAT_COLORS = ["#C4956A","#7B9EA8","#A89BB0","#8FAF8A","#B5A07A","#9E8E7E","#7A8F8A","#A07A7A","#B0A898","#8E9E8A","#A8956A"];
-const CAT_ICONS  = ["🍱","🚃","🛍","💊","📚","🎋","🏠","🏦","◎","🎵","🐾","✈️","💪","🎨","🍀"];
+// ── 預設類別 ──────────────────────────────────────────
 const DEFAULT_CATS = [
-  { id:"food",          label:"餐飲",   icon:"🍱", color:"#C4956A", subs:["早餐","午餐","晚餐","飲料","外送","聚餐"] },
-  { id:"transport",     label:"交通",   icon:"🚃", color:"#7B9EA8", subs:["捷運","公車","計程車","停車費","加油","高鐵"] },
-  { id:"shopping",      label:"購物",   icon:"🛍", color:"#A89BB0", subs:["日用品","服飾","3C","美妝","書籍"] },
-  { id:"medical",       label:"醫療",   icon:"💊", color:"#8FAF8A", subs:["掛號費","藥品","健康檢查","牙科","眼科"] },
-  { id:"education",     label:"教育",   icon:"📚", color:"#B5A07A", subs:["線上課程","書籍","補習班","學費"] },
-  { id:"entertainment", label:"娛樂",   icon:"🎋", color:"#9E8E7E", subs:["電影","遊戲","旅遊","訂閱服務","展覽"] },
-  { id:"home",          label:"家居",   icon:"🏠", color:"#7A8F8A", subs:["水費","電費","瓦斯","網路","租金","家具","維修"] },
-  { id:"loan",          label:"貸款",   icon:"🏦", color:"#A07A7A", subs:[] },
-  { id:"other",         label:"其他",   icon:"◎",  color:"#B0A898", subs:["保險","孝親費","捐款","雜支"] },
+  {id:"food",          label:"餐飲", iconKey:"food",          color:"#C4956A", subs:["早餐","午餐","晚餐","飲料","外送","聚餐"]},
+  {id:"transport",     label:"交通", iconKey:"transport",     color:"#7B9EA8", subs:["捷運","公車","計程車","停車費","加油","高鐵"]},
+  {id:"shopping",      label:"購物", iconKey:"shopping",      color:"#A89BB0", subs:["日用品","服飾","3C","美妝","書籍"]},
+  {id:"medical",       label:"醫療", iconKey:"medical",       color:"#8FAF8A", subs:["掛號費","藥品","健康檢查","牙科","眼科"]},
+  {id:"education",     label:"教育", iconKey:"education",     color:"#B5A07A", subs:["線上課程","書籍","補習班","學費"]},
+  {id:"entertainment", label:"娛樂", iconKey:"entertainment", color:"#9E8E7E", subs:["電影","遊戲","旅遊","訂閱服務","展覽"]},
+  {id:"home",          label:"家居", iconKey:"home",          color:"#7A8F8A", subs:["水費","電費","瓦斯","網路","租金","家具","維修"]},
+  {id:"loan",          label:"貸款", iconKey:"loan",          color:"#A07A7A", subs:[]},
+  {id:"other",         label:"其他", iconKey:"other",         color:"#B0A898", subs:["保險","孝親費","捐款","雜支"]},
 ];
 
-// ── 狀態 ────────────────────────────────────────────────
-let records    = [];   // [{ _key, user, category, sub, amount, note, date, payment }]
-let categories = [];   // [{ id, label, icon, color, subs[] }]
-let filterMonth = new Date().getMonth();
-let view       = "dashboard"; // dashboard | add | manage | editcat
-let editingKey = null;
+const USERS = {me:{label:"淯",color:"#5C7A6E"},husband:{label:"達",color:"#8B7355"}};
+const MONTHS = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
 
-// 表單狀態
-let fUser     = "me";
-let fPayment  = "cash";
-let fCategory = "";
-let fSub      = "";
+// ── 狀態 ─────────────────────────────────────────────
+let records=[], categories=[], filterMonth=new Date().getMonth(), view="dashboard", editingKey=null;
+let fUser="me", fPayment="cash", fCategory="", fSub="";
+let editCatId=null, newCatMode=false, ecIconKey="other", ecColor="#B0A898";
+let pieChart=null;
 
-// 類別編輯狀態
-let editCatId   = null;
-let newCatMode  = false;
-let ecIcon = "◎", ecColor = "#B0A898";
+// ── 工具 ─────────────────────────────────────────────
+function getIcon(key, size=18, color="currentColor") {
+  const svg = (ICONS[key] || ICONS.other)
+    .replace('stroke="currentColor"', `stroke="${color}"`)
+    .replace('viewBox', `width="${size}" height="${size}" viewBox`);
+  return svg;
+}
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function today(){ return new Date().toISOString().slice(0,10); }
 
-// 圖表
-let pieChart = null;
-
-// ── Firebase 訂閱 ────────────────────────────────────────
+// ── Firebase 訂閱 ─────────────────────────────────────
 db.ref("categories").on("value", snap => {
   const val = snap.val();
   if (val) {
-    categories = Object.entries(val).map(([id, v]) => ({ id, ...v, subs: v.subs || [] }));
+    categories = Object.entries(val).map(([id,v]) => ({id,...v,subs:v.subs||[]}));
   } else {
-    // 首次寫入預設
-    const obj = {};
-    DEFAULT_CATS.forEach(c => { obj[c.id] = { label:c.label, icon:c.icon, color:c.color, subs:c.subs }; });
+    const obj={};
+    DEFAULT_CATS.forEach(c=>{ obj[c.id]={label:c.label,iconKey:c.iconKey,color:c.color,subs:c.subs}; });
     db.ref("categories").set(obj);
   }
-  if (fCategory === "" && categories.length > 0) fCategory = categories[0].id;
+  if (!fCategory && categories.length>0) fCategory=categories[0].id;
   refreshAll();
 });
 
 db.ref("records").on("value", snap => {
-  const val = snap.val() || {};
-  records = Object.entries(val).map(([key, v]) => ({ _key:key, ...v }));
-  document.getElementById("loading").style.display = "none";
-  document.getElementById("dashboard").style.display = "block";
+  const val=snap.val()||{};
+  records=Object.entries(val).map(([key,v])=>({_key:key,...v}));
+  document.getElementById("loading").style.display="none";
+  document.getElementById("dashboard").style.display="block";
   refreshAll();
 });
 
-// ── 月份 ────────────────────────────────────────────────
-function changeMonth(dir) {
-  filterMonth = (filterMonth + dir + 12) % 12;
-  document.getElementById("month-label").textContent = MONTHS[filterMonth];
+// ── 月份 ─────────────────────────────────────────────
+function changeMonth(dir){
+  filterMonth=(filterMonth+dir+12)%12;
+  document.getElementById("month-label").textContent=MONTHS[filterMonth];
   refreshAll();
 }
-document.getElementById("month-label").textContent = MONTHS[filterMonth];
+document.getElementById("month-label").textContent=MONTHS[filterMonth];
 
-// ── 視圖切換 ─────────────────────────────────────────────
-function showView(v) {
-  view = v;
-  document.getElementById("dashboard").style.display    = v==="dashboard" ? "block" : "none";
-  document.getElementById("form-wrap").style.display    = v==="add"       ? "block" : "none";
-  document.getElementById("manage-wrap").style.display  = v==="manage"    ? "block" : "none";
-  document.getElementById("editcat-wrap").style.display = v==="editcat"   ? "block" : "none";
-  const btnTop = document.getElementById("btn-add-top");
-  btnTop.textContent = v==="dashboard" ? "+ 記帳" : "取消";
-  btnTop.className   = v==="dashboard" ? "btn-add" : "btn-add cancel";
+// ── 視圖切換 ──────────────────────────────────────────
+function showView(v){
+  view=v;
+  document.getElementById("dashboard").style.display   =v==="dashboard"?"block":"none";
+  document.getElementById("form-wrap").style.display   =v==="add"      ?"block":"none";
+  document.getElementById("manage-wrap").style.display =v==="manage"   ?"block":"none";
+  document.getElementById("editcat-wrap").style.display=v==="editcat"  ?"block":"none";
+  const btn=document.getElementById("btn-add-top");
+  btn.textContent=v==="dashboard"?"+ 記帳":"取消";
+  btn.className  =v==="dashboard"?"btn-add":"btn-add cancel";
+}
+function toggleAdd(){
+  if(view==="dashboard"){resetForm();showView("add");}
+  else{resetForm();showView("dashboard");}
 }
 
-function toggleAdd() {
-  if (view === "dashboard") {
-    resetForm();
-    showView("add");
-  } else {
-    resetForm();
-    showView("dashboard");
-  }
-}
-
-// ── 表單 ─────────────────────────────────────────────────
-function resetForm() {
-  editingKey = null;
-  fUser = "me"; fPayment = "cash";
-  fCategory = categories.length > 0 ? categories[0].id : "";
-  fSub = "";
-  document.getElementById("inp-amount").value = "";
-  document.getElementById("inp-note").value   = "";
-  document.getElementById("inp-date").value   = today();
-  document.getElementById("form-title").textContent = "新增支出";
-  document.getElementById("btn-save").textContent   = "記　錄";
-  document.getElementById("btn-save").className = "btn-save";
+// ── 表單 ─────────────────────────────────────────────
+function resetForm(){
+  editingKey=null; fUser="me"; fPayment="cash";
+  fCategory=categories.length>0?categories[0].id:""; fSub="";
+  document.getElementById("inp-amount").value="";
+  document.getElementById("inp-note").value="";
+  document.getElementById("inp-date").value=today();
+  document.getElementById("form-title").textContent="新增支出";
+  document.getElementById("btn-save").textContent="記　錄";
+  document.getElementById("btn-save").className="btn-save";
   renderFormUI();
 }
+function setUser(u){fUser=u;renderUserBtns();}
+function setPayment(p){fPayment=p;renderPaymentBtns();}
+function setCat(id){fCategory=id;fSub="";renderCatChips();renderSubChips();}
+function setSub(s){fSub=s;renderSubChips();}
 
-function today() {
-  return new Date().toISOString().slice(0,10);
+function renderFormUI(){renderUserBtns();renderPaymentBtns();renderCatChips();renderSubChips();}
+
+function renderUserBtns(){
+  document.getElementById("btn-me").className      ="toggle-btn"+(fUser==="me"      ?" active-green":"");
+  document.getElementById("btn-husband").className ="toggle-btn"+(fUser==="husband" ?" active-brown":"");
+}
+function renderPaymentBtns(){
+  document.getElementById("btn-cash").className="toggle-btn"+(fPayment==="cash"?" active-blue":"");
+  document.getElementById("btn-card").className="toggle-btn"+(fPayment==="card"?" active-blue":"");
 }
 
-function setUser(u) {
-  fUser = u;
-  renderUserBtns();
-}
-function setPayment(p) {
-  fPayment = p;
-  renderPaymentBtns();
-}
-function setCat(id) {
-  fCategory = id; fSub = "";
-  renderCatChips(); renderSubChips();
-}
-function setSub(s) {
-  fSub = s;
-  renderSubChips();
-}
+function renderCatChips(){
+  const el=document.getElementById("cat-chips");
+  el.innerHTML="";
+  categories.forEach(cat=>{
+    const active=fCategory===cat.id;
+    const wrap=document.createElement("div");
+    wrap.className="cat-chip-wrap";
 
-function renderFormUI() {
-  renderUserBtns(); renderPaymentBtns(); renderCatChips(); renderSubChips();
-}
+    const main=document.createElement("button");
+    main.className="cat-main-btn";
+    if(active){main.style.borderColor=cat.color;main.style.background=cat.color+"20";main.style.color=cat.color;}
+    main.innerHTML=`<span style="display:inline-flex;opacity:.8">${getIcon(cat.iconKey||"other",14,active?cat.color:"#9E8E7E")}</span>${escHtml(cat.label)}`;
+    main.onclick=()=>setCat(cat.id);
 
-function renderUserBtns() {
-  const bm = document.getElementById("btn-me");
-  const bh = document.getElementById("btn-husband");
-  bm.className = "toggle-btn" + (fUser==="me" ? " active-green" : "");
-  bh.className = "toggle-btn" + (fUser==="husband" ? " active-brown" : "");
-}
+    const edit=document.createElement("button");
+    edit.className="cat-edit-btn";
+    if(active){edit.style.borderColor=cat.color;edit.style.background=cat.color+"20";edit.style.color=cat.color;}
+    edit.innerHTML=getIcon("edit_pencil",12,active?cat.color:"#C8BEAF");
+    // pencil inline
+    edit.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${active?cat.color:'#C8BEAF'}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    edit.onclick=()=>openEditCat(cat);
 
-function renderPaymentBtns() {
-  document.getElementById("btn-cash").className = "toggle-btn" + (fPayment==="cash" ? " active-blue" : "");
-  document.getElementById("btn-card").className = "toggle-btn" + (fPayment==="card" ? " active-blue" : "");
-}
-
-function renderCatChips() {
-  const el = document.getElementById("cat-chips");
-  el.innerHTML = "";
-  categories.forEach(cat => {
-    const active = fCategory === cat.id;
-    const wrap = document.createElement("div");
-    wrap.className = "cat-chip-wrap";
-
-    const main = document.createElement("button");
-    main.className = "cat-main-btn";
-    main.textContent = cat.icon + " " + cat.label;
-    if (active) {
-      main.style.borderColor = cat.color;
-      main.style.background  = cat.color + "20";
-      main.style.color       = cat.color;
-    }
-    main.onclick = () => setCat(cat.id);
-
-    const edit = document.createElement("button");
-    edit.className = "cat-edit-btn";
-    edit.textContent = "✎";
-    if (active) {
-      edit.style.borderColor = cat.color;
-      edit.style.background  = cat.color + "20";
-      edit.style.color       = cat.color;
-    }
-    edit.onclick = () => openEditCat(cat);
-
-    wrap.appendChild(main);
-    wrap.appendChild(edit);
+    wrap.appendChild(main); wrap.appendChild(edit);
     el.appendChild(wrap);
   });
 }
 
-function renderSubChips() {
-  const el = document.getElementById("sub-chips");
-  el.innerHTML = "";
-  const cat = categories.find(c => c.id === fCategory);
+function renderSubChips(){
+  const el=document.getElementById("sub-chips");
+  el.innerHTML="";
+  const cat=categories.find(c=>c.id===fCategory);
 
-  // 不指定
-  const none = document.createElement("button");
-  none.className = "sub-chip";
-  none.textContent = "不指定";
-  if (fSub === "") {
-    none.style.borderColor = "#B0A898";
-    none.style.background  = "#B0A89820";
-    none.style.color       = "#7A6E65";
-  }
-  none.onclick = () => setSub("");
+  const none=document.createElement("button");
+  none.className="sub-chip";
+  none.textContent="不指定";
+  if(fSub===""){none.style.borderColor="#B0A898";none.style.background="#B0A89820";none.style.color="#7A6E65";}
+  none.onclick=()=>setSub("");
   el.appendChild(none);
 
-  if (cat && cat.subs && cat.subs.length > 0) {
-    cat.subs.forEach(s => {
-      const btn = document.createElement("button");
-      btn.className = "sub-chip";
-      btn.textContent = s;
-      if (fSub === s) {
-        btn.style.borderColor = cat.color;
-        btn.style.background  = cat.color + "18";
-        btn.style.color       = cat.color;
-      }
-      btn.onclick = () => setSub(s);
+  if(cat&&cat.subs&&cat.subs.length>0){
+    cat.subs.forEach(s=>{
+      const btn=document.createElement("button");
+      btn.className="sub-chip";
+      btn.textContent=s;
+      if(fSub===s){btn.style.borderColor=cat.color;btn.style.background=cat.color+"18";btn.style.color=cat.color;}
+      btn.onclick=()=>setSub(s);
       el.appendChild(btn);
     });
   } else {
-    const hint = document.createElement("span");
-    hint.style.cssText = "font-size:11px;color:#C8BEAF;letter-spacing:1px;line-height:28px";
-    hint.textContent = "點右上「管理子類別」新增";
+    const hint=document.createElement("span");
+    hint.style.cssText="font-size:11px;color:#C8BEAF;letter-spacing:1px;line-height:28px";
+    hint.textContent="點右上「管理子類別」新增";
     el.appendChild(hint);
   }
 }
 
-// ── 儲存記錄 ─────────────────────────────────────────────
-function saveRecord() {
-  const amount = parseFloat(document.getElementById("inp-amount").value);
-  if (!amount || isNaN(amount)) {
-    document.getElementById("inp-amount").focus();
-    return;
-  }
-  const rec = {
-    user:     fUser,
-    category: fCategory,
-    sub:      fSub || "",
-    amount:   amount,
-    note:     document.getElementById("inp-note").value.trim() || "－",
-    date:     document.getElementById("inp-date").value || today(),
-    payment:  fPayment,
-  };
-  const btn = document.getElementById("btn-save");
-  btn.textContent = "✓ 已儲存";
-  btn.className = "btn-save saved";
-
-  const p = editingKey
-    ? db.ref("records/" + editingKey).update(rec)
-    : db.ref("records").push(rec);
-
-  p.then(() => {
-    setTimeout(() => { resetForm(); showView("dashboard"); }, 700);
-  });
+// ── 儲存 ──────────────────────────────────────────────
+function saveRecord(){
+  const amount=parseFloat(document.getElementById("inp-amount").value);
+  if(!amount||isNaN(amount)){document.getElementById("inp-amount").focus();return;}
+  const rec={user:fUser,category:fCategory,sub:fSub||"",amount,note:document.getElementById("inp-note").value.trim()||"－",date:document.getElementById("inp-date").value||today(),payment:fPayment};
+  const btn=document.getElementById("btn-save");
+  btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
+  (editingKey?db.ref("records/"+editingKey).update(rec):db.ref("records").push(rec))
+    .then(()=>setTimeout(()=>{resetForm();showView("dashboard");},700));
 }
 
-// ── 編輯記錄 ─────────────────────────────────────────────
-function startEdit(r) {
-  editingKey = r._key;
-  fUser     = r.user || "me";
-  fPayment  = r.payment || "cash";
-  fCategory = r.category || (categories[0]?.id ?? "");
-  fSub      = r.sub || "";
-  document.getElementById("inp-amount").value = r.amount || "";
-  document.getElementById("inp-note").value   = r.note === "－" ? "" : (r.note || "");
-  document.getElementById("inp-date").value   = r.date || today();
-  document.getElementById("form-title").textContent = "編輯記錄";
-  document.getElementById("btn-save").textContent   = "更　新";
-  document.getElementById("btn-save").className = "btn-save";
-  renderFormUI();
-  showView("add");
+function startEdit(r){
+  editingKey=r._key; fUser=r.user||"me"; fPayment=r.payment||"cash";
+  fCategory=r.category||(categories[0]?.id??""); fSub=r.sub||"";
+  document.getElementById("inp-amount").value=r.amount||"";
+  document.getElementById("inp-note").value=r.note==="－"?"":(r.note||"");
+  document.getElementById("inp-date").value=r.date||today();
+  document.getElementById("form-title").textContent="編輯記錄";
+  document.getElementById("btn-save").textContent="更　新";
+  document.getElementById("btn-save").className="btn-save";
+  renderFormUI(); showView("add");
 }
-
-// ── 刪除記錄 ─────────────────────────────────────────────
-function deleteRecord(key) {
-  if (confirm("確定刪除這筆記錄？")) {
-    db.ref("records/" + key).remove();
-  }
+function deleteRecord(key){
+  if(confirm("確定刪除這筆記錄？")) db.ref("records/"+key).remove();
 }
+function handleEdit(key){const r=records.find(r=>r._key===key);if(r)startEdit(r);}
 
-// ── 子類別管理 ────────────────────────────────────────────
-function openManageSubs() {
-  const cat = categories.find(c => c.id === fCategory);
-  if (!cat) return;
-  document.getElementById("manage-icon").textContent = cat.icon;
-  document.getElementById("manage-name").textContent = cat.label;
-  document.getElementById("btn-addsub").style.background = cat.color;
+// ── 子類別管理 ────────────────────────────────────────
+function openManageSubs(){
+  const cat=categories.find(c=>c.id===fCategory);if(!cat)return;
+  const circle=document.getElementById("manage-icon-circle");
+  circle.style.background=cat.color+"20";
+  circle.innerHTML=`<span style="display:inline-flex">${getIcon(cat.iconKey||"other",18,cat.color)}</span>`;
+  document.getElementById("manage-name").textContent=cat.label;
+  document.getElementById("btn-addsub").style.background=cat.color;
   renderSubTags(cat);
-  document.getElementById("inp-newsub").value = "";
+  document.getElementById("inp-newsub").value="";
   showView("manage");
 }
-
-function renderSubTags(cat) {
-  const el = document.getElementById("sub-tags");
-  el.innerHTML = "";
-  if (!cat.subs || cat.subs.length === 0) {
-    el.innerHTML = '<span style="color:#C8BEAF;font-size:12px;letter-spacing:1px">尚無子類別，請在下方新增</span>';
-    return;
-  }
-  cat.subs.forEach(s => {
-    const tag = document.createElement("div");
-    tag.className = "sub-tag";
-    tag.style.background = cat.color + "18";
-    tag.style.border = "1px solid " + cat.color + "55";
-    tag.innerHTML = `<span style="color:#3D3530">${s}</span>
-      <button class="sub-tag-del" onclick="deleteSub('${s}')">×</button>`;
+function renderSubTags(cat){
+  const el=document.getElementById("sub-tags"); el.innerHTML="";
+  if(!cat.subs||cat.subs.length===0){el.innerHTML='<span style="color:#C8BEAF;font-size:12px;letter-spacing:1px">尚無子類別，請在下方新增</span>';return;}
+  cat.subs.forEach(s=>{
+    const tag=document.createElement("div");
+    tag.className="sub-tag";
+    tag.style.background=cat.color+"18"; tag.style.border="1px solid "+cat.color+"55";
+    tag.innerHTML=`<span style="color:#3D3530">${escHtml(s)}</span><button class="sub-tag-del" onclick="deleteSub('${escHtml(s)}')">×</button>`;
     el.appendChild(tag);
   });
 }
-
-function addSub() {
-  const v = document.getElementById("inp-newsub").value.trim();
-  if (!v) return;
-  const cat = categories.find(c => c.id === fCategory);
-  if (!cat) return;
-  const subs = [...(cat.subs || []), v];
-  db.ref("categories/" + fCategory).update({ subs });
-  document.getElementById("inp-newsub").value = "";
+function addSub(){
+  const v=document.getElementById("inp-newsub").value.trim();if(!v)return;
+  const cat=categories.find(c=>c.id===fCategory);if(!cat)return;
+  db.ref("categories/"+fCategory).update({subs:[...(cat.subs||[]),v]});
+  document.getElementById("inp-newsub").value="";
 }
-
-function deleteSub(sub) {
-  const cat = categories.find(c => c.id === fCategory);
-  if (!cat) return;
-  const subs = (cat.subs || []).filter(s => s !== sub);
-  db.ref("categories/" + fCategory).update({ subs });
+function deleteSub(sub){
+  const cat=categories.find(c=>c.id===fCategory);if(!cat)return;
+  db.ref("categories/"+fCategory).update({subs:(cat.subs||[]).filter(s=>s!==sub)});
 }
+function closeManageSubs(){showView("add");}
 
-function closeManageSubs() {
-  showView("add");
+// ── 主類別編輯 ────────────────────────────────────────
+function openEditCat(cat){
+  editCatId=cat.id;newCatMode=false;
+  document.getElementById("editcat-title").textContent="編輯類別";
+  document.getElementById("inp-catname").value=cat.label;
+  document.getElementById("btn-delcat").style.display="block";
+  ecIconKey=cat.iconKey||"other"; ecColor=cat.color;
+  renderIconGrid();renderColorGrid();showView("editcat");
 }
-
-// ── 主類別編輯 ────────────────────────────────────────────
-function openEditCat(cat) {
-  editCatId  = cat.id;
-  newCatMode = false;
-  document.getElementById("editcat-title").textContent = "編輯類別";
-  document.getElementById("inp-catname").value = cat.label;
-  document.getElementById("btn-delcat").style.display = "block";
-  ecIcon  = cat.icon;
-  ecColor = cat.color;
-  renderIconGrid(); renderColorGrid();
-  showView("editcat");
+function openNewCat(){
+  editCatId=null;newCatMode=true;
+  document.getElementById("editcat-title").textContent="新增類別";
+  document.getElementById("inp-catname").value="";
+  document.getElementById("btn-delcat").style.display="none";
+  ecIconKey="other"; ecColor="#B0A898";
+  renderIconGrid();renderColorGrid();showView("editcat");
 }
-
-function openNewCat() {
-  editCatId  = null;
-  newCatMode = true;
-  document.getElementById("editcat-title").textContent = "新增類別";
-  document.getElementById("inp-catname").value = "";
-  document.getElementById("btn-delcat").style.display = "none";
-  ecIcon = "◎"; ecColor = "#B0A898";
-  renderIconGrid(); renderColorGrid();
-  showView("editcat");
-}
-
-function renderIconGrid() {
-  const el = document.getElementById("icon-grid");
-  el.innerHTML = "";
-  CAT_ICONS.forEach(ico => {
-    const btn = document.createElement("button");
-    btn.className = "icon-opt" + (ecIcon===ico ? " sel" : "");
-    btn.textContent = ico;
-    btn.onclick = () => { ecIcon = ico; renderIconGrid(); };
+function renderIconGrid(){
+  const el=document.getElementById("icon-grid"); el.innerHTML="";
+  ICON_KEYS.forEach(key=>{
+    const btn=document.createElement("button");
+    btn.className="icon-opt"+(ecIconKey===key?" sel":"");
+    btn.innerHTML=getIcon(key,22,ecIconKey===key?ecColor:"#9E8E7E");
+    btn.onclick=()=>{ecIconKey=key;renderIconGrid();};
     el.appendChild(btn);
   });
 }
-
-function renderColorGrid() {
-  const el = document.getElementById("color-grid");
-  el.innerHTML = "";
-  CAT_COLORS.forEach(col => {
-    const div = document.createElement("div");
-    div.className = "color-opt" + (ecColor===col ? " sel" : "");
-    div.style.background = col;
-    div.onclick = () => { ecColor = col; renderColorGrid(); };
+function renderColorGrid(){
+  const el=document.getElementById("color-grid"); el.innerHTML="";
+  CAT_COLORS.forEach(col=>{
+    const div=document.createElement("div");
+    div.className="color-opt"+(ecColor===col?" sel":"");
+    div.style.background=col;
+    div.onclick=()=>{ecColor=col;renderColorGrid();if(ecIconKey)renderIconGrid();};
     el.appendChild(div);
   });
 }
-
-async function saveCategory() {
-  const label = document.getElementById("inp-catname").value.trim();
-  if (!label) { document.getElementById("inp-catname").focus(); return; }
-  if (newCatMode) {
-    const newId = "cat_" + Date.now();
-    await db.ref("categories/" + newId).set({ label, icon:ecIcon, color:ecColor, subs:[] });
-    fCategory = newId;
+async function saveCategory(){
+  const label=document.getElementById("inp-catname").value.trim();
+  if(!label){document.getElementById("inp-catname").focus();return;}
+  if(newCatMode){
+    const newId="cat_"+Date.now();
+    await db.ref("categories/"+newId).set({label,iconKey:ecIconKey,color:ecColor,subs:[]});
+    fCategory=newId;
   } else {
-    await db.ref("categories/" + editCatId).update({ label, icon:ecIcon, color:ecColor });
+    await db.ref("categories/"+editCatId).update({label,iconKey:ecIconKey,color:ecColor});
   }
   closeEditCat();
 }
-
-async function deleteCategory() {
-  if (!confirm("確定刪除此類別？（已記錄的資料不受影響）")) return;
-  await db.ref("categories/" + editCatId).remove();
-  if (fCategory === editCatId) fCategory = categories[0]?.id ?? "";
+async function deleteCategory(){
+  if(!confirm("確定刪除此類別？（已記錄的資料不受影響）"))return;
+  await db.ref("categories/"+editCatId).remove();
+  if(fCategory===editCatId) fCategory=categories[0]?.id??"";
   closeEditCat();
 }
+function closeEditCat(){showView("add");renderCatChips();}
 
-function closeEditCat() {
-  showView("add");
-  renderCatChips();
+// ── 主畫面渲染 ────────────────────────────────────────
+function refreshAll(){
+  if(view==="manage"){const cat=categories.find(c=>c.id===fCategory);if(cat)renderSubTags(cat);return;}
+  if(view!=="dashboard")return;
+  const f=records.filter(r=>new Date(r.date).getMonth()===filterMonth);
+  const total=f.reduce((s,r)=>s+(r.amount||0),0);
+  document.getElementById("total-amount").textContent="NT$ "+total.toLocaleString();
+  renderPie(f); renderRecords(f);
 }
 
-// ── 渲染主畫面 ────────────────────────────────────────────
-function refreshAll() {
-  if (view !== "dashboard") {
-    // 子類別管理時同步更新 tags
-    if (view === "manage") {
-      const cat = categories.find(c => c.id === fCategory);
-      if (cat) renderSubTags(cat);
-    }
-    return;
-  }
-  const f = records.filter(r => {
-    const m = new Date(r.date).getMonth();
-    return m === filterMonth;
+function renderPie(f){
+  const cc=document.getElementById("chart-card"),ce=document.getElementById("chart-empty");
+  if(f.length===0){cc.style.display="none";ce.style.display="block";return;}
+  cc.style.display="block";ce.style.display="none";
+  const map={};
+  f.forEach(r=>{map[r.category]=(map[r.category]||0)+(r.amount||0);});
+  const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const labels=entries.map(([id])=>categories.find(c=>c.id===id)?.label??id);
+  const data=entries.map(([,v])=>v);
+  const colors=entries.map(([id])=>categories.find(c=>c.id===id)?.color??"#B0A898");
+  if(pieChart){pieChart.destroy();pieChart=null;}
+  pieChart=new Chart(document.getElementById("pieChart").getContext("2d"),{
+    type:"doughnut",
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
+    options:{cutout:"58%",plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>" NT$ "+ctx.raw.toLocaleString()}}},animation:{duration:400}}
   });
-  const total = f.reduce((s, r) => s + (r.amount||0), 0);
-  document.getElementById("total-amount").textContent = "NT$ " + total.toLocaleString();
-
-  renderPie(f);
-  renderRecords(f);
-}
-
-// ── 圓餅圖 ───────────────────────────────────────────────
-function renderPie(f) {
-  const chartCard  = document.getElementById("chart-card");
-  const chartEmpty = document.getElementById("chart-empty");
-  if (f.length === 0) {
-    chartCard.style.display  = "none";
-    chartEmpty.style.display = "block";
-    return;
-  }
-  chartCard.style.display  = "block";
-  chartEmpty.style.display = "none";
-
-  const map = {};
-  f.forEach(r => { map[r.category] = (map[r.category]||0) + (r.amount||0); });
-  const entries = Object.entries(map).sort((a,b) => b[1]-a[1]);
-  const labels = entries.map(([id]) => categories.find(c=>c.id===id)?.label ?? id);
-  const data   = entries.map(([,v]) => v);
-  const colors = entries.map(([id]) => categories.find(c=>c.id===id)?.color ?? "#B0A898");
-
-  if (pieChart) { pieChart.destroy(); pieChart = null; }
-  const ctx = document.getElementById("pieChart").getContext("2d");
-  pieChart = new Chart(ctx, {
-    type: "doughnut",
-    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }] },
-    options: {
-      cutout: "58%",
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: {
-          label: ctx => " NT$ " + ctx.raw.toLocaleString()
-        }
-      }},
-      animation: { duration: 400 },
-    }
-  });
-
-  // Legend
-  const leg = document.getElementById("chart-legend");
-  leg.innerHTML = "";
-  entries.forEach(([id, val]) => {
-    const cat = categories.find(c=>c.id===id);
-    const item = document.createElement("div");
-    item.className = "legend-item";
-    item.innerHTML = `
-      <div class="legend-dot" style="background:${cat?.color??'#B0A898'}"></div>
-      <span class="legend-name">${cat?.label??id}</span>
-      <span class="legend-val">${val.toLocaleString()}</span>`;
+  const leg=document.getElementById("chart-legend"); leg.innerHTML="";
+  entries.forEach(([id,val])=>{
+    const cat=categories.find(c=>c.id===id);
+    const item=document.createElement("div"); item.className="legend-item";
+    item.innerHTML=`<div class="legend-dot" style="background:${cat?.color??"#B0A898"}"></div><span class="legend-name">${escHtml(cat?.label??id)}</span><span class="legend-val">${val.toLocaleString()}</span>`;
     leg.appendChild(item);
   });
 }
 
-// ── 明細列表 ─────────────────────────────────────────────
-function renderRecords(f) {
-  const el = document.getElementById("records-inner");
-  el.innerHTML = "";
-  const sorted = [...f].sort((a,b) => new Date(b.date)-new Date(a.date));
-  if (sorted.length === 0) {
-    el.innerHTML = '<div class="empty">無記錄</div>';
-    return;
-  }
-  sorted.forEach((r, i) => {
-    const cat  = categories.find(c=>c.id===r.category) ?? { icon:"◎", label:r.category, color:"#B0A898" };
-    const user = USERS[r.user] ?? { label:"?", color:"#B0A898" };
-    const d    = new Date(r.date);
-    const isFirst = i===0, isLast = i===sorted.length-1;
-    const posClass = isFirst&&isLast ? "only" : isFirst ? "first" : isLast ? "last" : "";
+function renderRecords(f){
+  const el=document.getElementById("records-inner"); el.innerHTML="";
+  const sorted=[...f].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(sorted.length===0){el.innerHTML='<div class="empty">無記錄</div>';return;}
+  sorted.forEach((r,i)=>{
+    const cat=categories.find(c=>c.id===r.category)??{iconKey:"other",label:r.category,color:"#B0A898"};
+    const user=USERS[r.user]??{label:"?",color:"#B0A898"};
+    const d=new Date(r.date);
+    const isFirst=i===0,isLast=i===sorted.length-1;
+    const pos=isFirst&&isLast?"only":isFirst?"first":isLast?"last":"";
 
-    const outer = document.createElement("div");
-    outer.className = "swipe-outer " + posClass;
+    const outer=document.createElement("div");
+    outer.className="swipe-outer "+pos;
 
     // 底層按鈕
-    const actions = document.createElement("div");
-    actions.className = "swipe-actions";
-    actions.innerHTML = `
-      <button class="swipe-btn edit"   onclick="handleEdit('${r._key}')">編輯</button>
-      <button class="swipe-btn delete" onclick="deleteRecord('${r._key}')">刪除</button>`;
+    const actions=document.createElement("div");
+    actions.className="swipe-actions";
+    actions.innerHTML=`
+      <button class="swipe-btn edit" onclick="handleEdit('${r._key}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        編輯
+      </button>
+      <button class="swipe-btn delete" onclick="deleteRecord('${r._key}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        刪除
+      </button>`;
 
-    // 內容層
-    const inner = document.createElement("div");
-    inner.className = "swipe-inner";
-    inner.innerHTML = `
-      <div class="rec-icon" style="background:${cat.color}20">${cat.icon}</div>
+    // 付款圖示
+    const payIcon = r.payment==="cash"
+      ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B0A898" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`
+      : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B0A898" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`;
+
+    const inner=document.createElement("div");
+    inner.className="swipe-inner";
+    inner.innerHTML=`
+      <div class="rec-icon" style="background:${cat.color}20">${getIcon(cat.iconKey||"other",17,cat.color)}</div>
       <div class="rec-info">
         <div class="rec-note">${escHtml(r.note)}</div>
         <div class="rec-meta">
-          ${escHtml(cat.label)}${r.sub ? ' · '+escHtml(r.sub) : ''}
-          &nbsp;${d.getMonth()+1}/${d.getDate()}
-          &nbsp;${r.payment==='cash' ? '💴' : '💳'}
+          <span>${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}</span>
+          <span>·</span><span>${d.getMonth()+1}/${d.getDate()}</span>
+          <span>·</span>${payIcon}
         </div>
       </div>
       <div class="rec-user" style="color:${user.color};border:1px solid ${user.color}">${user.label}</div>
       <div class="rec-amount">${(r.amount||0).toLocaleString()}</div>`;
 
-    // 觸控滑動
-    let startX = null, offset = 0, swiping = false;
-    const THRESHOLD = 80, MAX = 140;
-
-    inner.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX; swiping = false;
-    }, { passive: true });
-
-    inner.addEventListener("touchmove", e => {
-      if (startX === null) return;
-      const dx = startX - e.touches[0].clientX;
-      if (dx > 5) { swiping = true; offset = Math.min(dx, MAX); inner.style.transition="none"; inner.style.transform=`translateX(-${offset}px)`; }
-    }, { passive: true });
-
-    inner.addEventListener("touchend", () => {
-      inner.style.transition = "transform .25s ease";
-      if (offset > THRESHOLD) { offset = MAX; inner.style.transform = `translateX(-${MAX}px)`; }
-      else { offset = 0; inner.style.transform = "translateX(0)"; }
-      startX = null;
+    // 滑動邏輯
+    let startX=null,offset=0,swiping=false;
+    const THRESHOLD=80,MAX=140;
+    inner.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;swiping=false;},{passive:true});
+    inner.addEventListener("touchmove",e=>{
+      if(startX===null)return;
+      const dx=startX-e.touches[0].clientX;
+      if(dx>5){swiping=true;offset=Math.min(dx,MAX);inner.style.transition="none";inner.style.transform=`translateX(-${offset}px)`;}
+    },{passive:true});
+    inner.addEventListener("touchend",()=>{
+      inner.style.transition="transform .25s ease";
+      offset=offset>THRESHOLD?MAX:0;
+      inner.style.transform=offset?`translateX(-${MAX}px)`:"translateX(0)";
+      startX=null;
     });
 
-    outer.appendChild(actions);
-    outer.appendChild(inner);
+    outer.appendChild(actions); outer.appendChild(inner);
     el.appendChild(outer);
   });
-}
-
-// 編輯：找到記錄再呼叫 startEdit
-function handleEdit(key) {
-  const r = records.find(r => r._key === key);
-  if (r) startEdit(r);
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 </script>
 </body>
