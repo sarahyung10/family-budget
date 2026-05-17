@@ -75,12 +75,13 @@ body{font-family:'Noto Serif TC','Hiragino Mincho ProN',serif;background:var(--b
 .swipe-btn.edit{background:var(--blue)}
 .swipe-btn.delete{background:var(--red)}
 .swipe-btn svg{opacity:.9}
-.swipe-inner{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);position:relative;z-index:1;transition:transform .25s ease;touch-action:pan-y}
+.swipe-inner{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);position:relative;z-index:1;transition:transform .25s ease;touch-action:pan-y;will-change:transform}
 
 /* Record icon circle */
 .rec-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .rec-info{flex:1;min-width:0}
-.rec-note{font-size:13px;color:var(--dark);letter-spacing:1px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-cat{font-size:13px;color:var(--dark);letter-spacing:1px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.rec-note-small{font-size:11px;color:var(--mid);letter-spacing:1px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rec-meta{font-size:10px;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:4px}
 .rec-user{font-size:11px;border-radius:10px;padding:2px 8px;letter-spacing:1px;flex-shrink:0}
 .rec-amount{font-size:15px;font-weight:600;color:var(--dark);letter-spacing:1px;flex-shrink:0;min-width:56px;text-align:right}
@@ -499,8 +500,29 @@ function saveRecord(){
   const rec={user:fUser,category:fCategory,sub:fSub||"",amount,note:document.getElementById("inp-note").value.trim()||"－",date:document.getElementById("inp-date").value||today(),payment:fPayment};
   const btn=document.getElementById("btn-save");
   btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
-  (editingKey?db.ref("records/"+editingKey).update(rec):db.ref("records").push(rec))
-    .then(()=>setTimeout(()=>{resetForm();showView("dashboard");},700));
+
+  if(editingKey){
+    // 本地即時更新
+    const idx=records.findIndex(r=>r._key===editingKey);
+    if(idx>-1) records[idx]={...records[idx],...rec};
+    db.ref("records/"+editingKey).update(rec);
+  } else {
+    // 本地即時插入（暫用臨時 key，Firebase 回傳後會被 onValue 替換）
+    const tmpKey="_tmp_"+Date.now();
+    records.unshift({_key:tmpKey,...rec});
+    db.ref("records").push(rec);
+  }
+
+  // 立刻更新畫面
+  const f=records.filter(r=>new Date(r.date).getMonth()===filterMonth);
+  const total=f.reduce((s,r)=>s+(r.amount||0),0);
+
+  setTimeout(()=>{
+    resetForm();
+    showView("dashboard");
+    document.getElementById("total-amount").textContent="NT$ "+total.toLocaleString();
+    renderPie(f); renderRecords(f);
+  },600);
 }
 
 function startEdit(r){
@@ -683,30 +705,47 @@ function renderRecords(f){
     inner.innerHTML=`
       <div class="rec-icon" style="background:${cat.color}20">${getIcon(cat.iconKey||"other",17,cat.color)}</div>
       <div class="rec-info">
-        <div class="rec-note">${escHtml(r.note)}</div>
+        <div class="rec-cat">${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}</div>
+        <div class="rec-note-small">${escHtml(r.note==="－"?"":r.note)}</div>
         <div class="rec-meta">
-          <span>${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}</span>
-          <span>·</span><span>${d.getMonth()+1}/${d.getDate()}</span>
+          <span>${d.getMonth()+1}/${d.getDate()}</span>
           <span>·</span>${payIcon}
         </div>
       </div>
       <div class="rec-user" style="color:${user.color};border:1px solid ${user.color}">${user.label}</div>
       <div class="rec-amount">${(r.amount||0).toLocaleString()}</div>`;
 
-    // 滑動邏輯
-    let startX=null,offset=0,swiping=false;
+    // 滑動邏輯（RAF 優化，減少卡頓）
+    let startX=null,startY=null,offset=0,rafId=null,locked=false;
     const THRESHOLD=80,MAX=140;
-    inner.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;swiping=false;},{passive:true});
+    inner.addEventListener("touchstart",e=>{
+      startX=e.touches[0].clientX;
+      startY=e.touches[0].clientY;
+      locked=false;
+      inner.style.transition="none";
+    },{passive:true});
     inner.addEventListener("touchmove",e=>{
       if(startX===null)return;
       const dx=startX-e.touches[0].clientX;
-      if(dx>5){swiping=true;offset=Math.min(dx,MAX);inner.style.transition="none";inner.style.transform=`translateX(-${offset}px)`;}
+      const dy=Math.abs(e.touches[0].clientY-startY);
+      // 垂直滑動時不觸發水平
+      if(!locked&&dy>dx){startX=null;return;}
+      locked=true;
+      if(dx>3){
+        const target=Math.min(Math.max(dx,0),MAX);
+        if(rafId)cancelAnimationFrame(rafId);
+        rafId=requestAnimationFrame(()=>{
+          offset=target;
+          inner.style.transform=`translateX(-${offset}px)`;
+        });
+      }
     },{passive:true});
     inner.addEventListener("touchend",()=>{
-      inner.style.transition="transform .25s ease";
+      if(rafId)cancelAnimationFrame(rafId);
+      inner.style.transition="transform .22s ease";
       offset=offset>THRESHOLD?MAX:0;
       inner.style.transform=offset?`translateX(-${MAX}px)`:"translateX(0)";
-      startX=null;
+      startX=null;startY=null;locked=false;
     });
 
     outer.appendChild(actions); outer.appendChild(inner);
