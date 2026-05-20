@@ -11,7 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Josefin+Sans:wght@300;400;600;700&display=swap');
 :root {
   --bg:#F4F6FB;
   --card:#FFFFFF;
@@ -44,11 +44,11 @@ body{font-family:'Noto Sans TC','PingFang TC','Helvetica Neue',sans-serif;backgr
 /* Header */
 #header{background:#fff;color:var(--dark);padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 var(--border),0 2px 16px rgba(108,99,255,.07)}
 .header-title{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.header-last{font-size:10px;color:var(--muted);margin-top:2px}
-.month-nav{display:flex;align-items:center;background:var(--bg);border-radius:20px;padding:2px 4px}
-.arr{cursor:pointer;user-select:none;padding:4px 10px;opacity:.5;font-size:20px;line-height:1;transition:opacity .2s;color:var(--primary)}
+.header-last{font-size:10px;color:#8A90B0;margin-top:2px}
+.month-nav{display:flex;align-items:center;background:var(--bg);border-radius:20px;padding:2px 4px;border:1px solid var(--border)}
+.arr{cursor:pointer;user-select:none;padding:4px 10px;opacity:.6;font-size:20px;line-height:1;transition:opacity .2s;color:var(--primary)}
 .arr:hover,.arr:active{opacity:1}
-#month-label{font-size:12px;font-weight:600;min-width:80px;text-align:center;color:var(--dark)}
+#month-label{font-size:12px;font-weight:700;min-width:80px;text-align:center;color:var(--dark)}
 .btn-add{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 2px 10px rgba(108,99,255,.35)}
 .btn-add.cancel{background:#f0f0f4;color:var(--mid);box-shadow:none}
 .btn-add:active{transform:scale(.96)}
@@ -63,20 +63,20 @@ body{font-family:'Noto Sans TC','PingFang TC','Helvetica Neue',sans-serif;backgr
 
 /* Chart card */
 .card{margin:12px 16px 0;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 16px;border:none}
-.card-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:12px;letter-spacing:.5px}
+.card-label{font-size:11px;font-weight:600;color:#6C7494;margin-bottom:12px;letter-spacing:.5px}
 #chart-wrap{position:relative;width:180px;height:180px;margin:0 auto}
 #chart-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px}
 .legend-item{display:flex;align-items:center;gap:6px}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.legend-name{font-size:12px;color:var(--mid);font-weight:500}
-.legend-val{font-size:12px;color:var(--muted)}
+.legend-name{font-size:12px;color:#4A5070;font-weight:500}
+.legend-val{font-size:12px;color:#6C7494}
 .empty-chart{padding:36px 0;text-align:center;color:var(--muted);font-size:13px}
 
 /* Records */
 #records-list{margin:12px 16px 0}
-.list-header{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:10px;letter-spacing:.5px}
-.hint{font-size:9px;opacity:.6;margin-left:6px;font-weight:400}
-.empty{color:var(--muted);font-size:13px;text-align:center;padding:32px 0}
+.list-header{font-size:11px;font-weight:600;color:#5A6080;margin-bottom:10px;letter-spacing:.5px}
+.hint{font-size:9px;opacity:.7;margin-left:6px;font-weight:400}
+.empty{color:#8A90B0;font-size:13px;text-align:center;padding:32px 0}
 
 /* Swipe row */
 .swipe-outer{position:relative;overflow:hidden;margin-bottom:6px;border-radius:var(--radius-sm)}
@@ -90,8 +90,8 @@ body{font-family:'Noto Sans TC','PingFang TC','Helvetica Neue',sans-serif;backgr
 .rec-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
 .rec-info{flex:1;min-width:0}
 .rec-cat{font-size:14px;color:var(--dark);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.rec-note-small{font-size:11px;color:var(--muted);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rec-meta{font-size:10px;color:var(--pale);display:flex;align-items:center;gap:4px}
+.rec-note-small{font-size:11px;color:#6C7494;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-meta{font-size:10px;color:#9AA0C0;display:flex;align-items:center;gap:4px}
 .rec-user{font-size:11px;font-weight:600;border-radius:8px;padding:2px 8px;flex-shrink:0}
 .rec-amount{font-size:15px;font-weight:700;color:var(--dark);flex-shrink:0;min-width:56px;text-align:right}
 .rec-amount.income{color:var(--green)}
@@ -100,12 +100,12 @@ body{font-family:'Noto Sans TC','PingFang TC','Helvetica Neue',sans-serif;backgr
 #form-wrap{margin:16px 16px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 18px;animation:fadeIn .2s ease}
 .form-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:18px;letter-spacing:.5px}
 .field{margin-bottom:16px}
-.field-label{font-size:11px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none}
+.field-label{font-size:11px;font-weight:600;color:#5A6080;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none}
 .field-link{font-size:11px;color:var(--primary);font-weight:600;cursor:pointer}
 .btn-row{display:flex;gap:8px}
 
 /* Toggle buttons */
-.toggle-btn{flex:1;padding:10px 0;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.toggle-btn{flex:1;padding:10px 0;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:transparent;color:#5A6080;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
 .toggle-btn.active-green{border-color:var(--user-me);background:var(--user-me);color:#fff;box-shadow:0 2px 10px rgba(108,99,255,.3)}
 .toggle-btn.active-green svg *{stroke:#fff}
 .toggle-btn.active-brown{border-color:var(--user-hu);background:var(--user-hu);color:#fff;box-shadow:0 2px 10px rgba(79,168,232,.3)}
@@ -121,7 +121,7 @@ body{font-family:'Noto Sans TC','PingFang TC','Helvetica Neue',sans-serif;backgr
 .cat-main-btn:active,.cat-edit-btn:active{opacity:.7}
 
 /* Sub chips */
-.sub-chip{padding:6px 14px;border-radius:16px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.sub-chip{padding:6px 14px;border-radius:16px;border:1.5px solid var(--border);background:transparent;color:#6C7494;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
 
 input[type=text],input[type=number],input[type=date]{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-family:inherit;font-size:14px;color:var(--dark);-webkit-appearance:none;appearance:none}
 input[type=number]{font-size:24px;font-weight:700}
@@ -191,7 +191,7 @@ input:focus{outline:none;border-color:var(--primary);background:#fff}
 <div id="header">
   <div>
     <div class="header-title">
-      <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.5px">Yu家</span><span style="font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:500;color:var(--light);letter-spacing:2px;margin-left:5px;vertical-align:middle">記帳本</span>
+      <span style="font-family:'Josefin Sans',sans-serif;font-size:21px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
   </div>
@@ -603,6 +603,22 @@ function updateIdentityBadge(){
   badge.onclick = () => showIdentityModal(true);
 }
 
+// ── 月份 ─────────────────────────────────────────────
+let filterYear = new Date().getFullYear();
+
+function updateMonthLabel(){
+  document.getElementById("month-label").textContent = `${filterYear}／${MONTHS[filterMonth]}`;
+}
+
+function changeMonth(dir){
+  filterMonth += dir;
+  if(filterMonth > 11){ filterMonth = 0; filterYear++; }
+  if(filterMonth < 0){  filterMonth = 11; filterYear--; }
+  updateMonthLabel();
+  refreshAll();
+}
+updateMonthLabel();
+
 // ── 月份選擇器 ────────────────────────────────────────
 let pickerYear = filterYear;
 
@@ -670,22 +686,6 @@ function renderPickerMonths(){
     el.appendChild(btn);
   });
 }
-
-// 月份 ─────────────────────────────────────────────
-let filterYear = new Date().getFullYear();
-
-function updateMonthLabel(){
-  document.getElementById("month-label").textContent = `${filterYear}／${MONTHS[filterMonth]}`;
-}
-
-function changeMonth(dir){
-  filterMonth += dir;
-  if(filterMonth > 11){ filterMonth = 0; filterYear++; }
-  if(filterMonth < 0){  filterMonth = 11; filterYear--; }
-  updateMonthLabel();
-  refreshAll();
-}
-updateMonthLabel();
 
 // ── 視圖切換 ──────────────────────────────────────────
 function showView(v){
