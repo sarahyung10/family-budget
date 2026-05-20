@@ -11,7 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 :root {
   --bg:#F4F6FB;
   --card:#FFFFFF;
@@ -48,7 +48,7 @@ body{font-family:'Noto Sans TC','PingFang TC','Helvetica Neue',sans-serif;backgr
 .month-nav{display:flex;align-items:center;background:var(--bg);border-radius:20px;padding:2px 4px}
 .arr{cursor:pointer;user-select:none;padding:4px 10px;opacity:.5;font-size:20px;line-height:1;transition:opacity .2s;color:var(--primary)}
 .arr:hover,.arr:active{opacity:1}
-#month-label{font-size:13px;font-weight:600;min-width:44px;text-align:center;color:var(--dark)}
+#month-label{font-size:12px;font-weight:600;min-width:80px;text-align:center;color:var(--dark)}
 .btn-add{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 2px 10px rgba(108,99,255,.35)}
 .btn-add.cancel{background:#f0f0f4;color:var(--mid);box-shadow:none}
 .btn-add:active{transform:scale(.96)}
@@ -190,15 +190,53 @@ input:focus{outline:none;border-color:var(--primary);background:#fff}
 
 <div id="header">
   <div>
-    <div class="header-title">Yu家記帳</div>
+    <div class="header-title">
+      <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.5px">Yu家</span><span style="font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:500;color:var(--light);letter-spacing:2px;margin-left:5px;vertical-align:middle">記帳本</span>
+    </div>
     <div class="header-last" id="header-last"></div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
-    <span id="month-label"></span>
+    <span id="month-label" onclick="openMonthPicker()" style="cursor:pointer;padding:4px 6px;border-radius:8px;transition:background .15s" onmouseover="this.style.background='rgba(108,99,255,.08)'" onmouseout="this.style.background='transparent'"></span>
     <span class="arr" onclick="changeMonth(1)">›</span>
   </div>
   <button class="btn-add" id="btn-add-top" onclick="toggleAdd()">+ 記帳</button>
+</div>
+
+<!-- Month Picker Modal -->
+<div id="month-picker-overlay" onclick="closeMonthPicker()" style="display:none;position:fixed;inset:0;background:rgba(26,31,54,.4);z-index:200;backdrop-filter:blur(3px)"></div>
+<div id="month-picker" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.94);z-index:201;background:#fff;border-radius:20px;padding:24px 20px;width:320px;box-shadow:0 20px 60px rgba(108,99,255,.25);transition:transform .2s ease,opacity .2s ease;opacity:0">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <button onclick="changePickerYear(-1)" style="background:var(--bg);border:none;border-radius:8px;padding:6px 12px;font-size:18px;cursor:pointer;color:var(--primary)">‹</button>
+    <span id="picker-year" style="font-size:17px;font-weight:700;color:var(--dark)"></span>
+    <button onclick="changePickerYear(1)" style="background:var(--bg);border:none;border-radius:8px;padding:6px 12px;font-size:18px;cursor:pointer;color:var(--primary)">›</button>
+  </div>
+  <div id="picker-months" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+</div>
+
+<!-- 身份設定彈窗（首次使用 / 點擊身份標籤） -->
+<div id="identity-overlay" style="display:none;position:fixed;inset:0;background:rgba(26,31,54,.5);z-index:300;backdrop-filter:blur(6px)"></div>
+<div id="identity-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);z-index:301;background:#fff;border-radius:24px;padding:32px 24px;width:310px;box-shadow:0 20px 60px rgba(108,99,255,.3);text-align:center;opacity:0;transition:all .25s ease">
+  <div style="font-size:32px;margin-bottom:12px" id="identity-emoji">👋</div>
+  <div style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:6px" id="identity-modal-title">你是誰？</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="identity-modal-sub">選一次就好，之後自動帶入</div>
+
+  <!-- 名稱輸入（改名模式時顯示） -->
+  <div id="identity-rename-wrap" style="display:none;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;text-align:left">顯示名稱</div>
+    <input id="identity-name-input" type="text" maxlength="6" placeholder="輸入你的名稱"
+      style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:16px;font-weight:600;color:var(--dark);text-align:center;background:var(--bg)">
+  </div>
+
+  <div style="display:flex;gap:12px">
+    <button id="identity-btn-me" onclick="setIdentity('me')"
+      style="flex:1;padding:16px 0;border-radius:14px;border:none;background:linear-gradient(135deg,#6C63FF,#4FA8E8);color:#fff;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(108,99,255,.35);transition:transform .15s"
+      onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform='scale(1)'">淯</button>
+    <button id="identity-btn-husband" onclick="setIdentity('husband')"
+      style="flex:1;padding:16px 0;border-radius:14px;border:none;background:linear-gradient(135deg,#4FA8E8,#6C63FF);color:#fff;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(79,168,232,.35);transition:transform .15s"
+      onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform='scale(1)'">達</button>
+  </div>
+  <button id="identity-cancel-btn" onclick="hideIdentityModal()" style="display:none;margin-top:14px;width:100%;padding:10px 0;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer">取消</button>
 </div>
 
 <div id="main">
@@ -238,7 +276,10 @@ input:focus{outline:none;border-color:var(--primary);background:#fff}
   </div>
 
   <div id="form-wrap" style="display:none">
-    <div class="form-title" id="form-title">新增支出</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div class="form-title" id="form-title" style="margin-bottom:0">新增支出</div>
+      <div id="form-identity-badge" onclick="showIdentityModal()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;cursor:pointer;transition:background .15s;font-size:12px;font-weight:600" title="點擊切換身份"></div>
+    </div>
 
     <!-- 支出 / 收入 切換 -->
     <div class="type-row">
@@ -250,20 +291,6 @@ input:focus{outline:none;border-color:var(--primary);background:#fff}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
         收入
       </button>
-    </div>
-    <div class="field">
-      <div class="field-label">記帳人</div>
-      <div class="btn-row">
-        <button class="toggle-btn" id="btn-me" onclick="setUser('me')">
-          <!-- person icon -->
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          淯
-        </button>
-        <button class="toggle-btn" id="btn-husband" onclick="setUser('husband')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          達
-        </button>
-      </div>
     </div>
     <div class="field">
       <div class="field-label">付款方式</div>
@@ -407,7 +434,14 @@ const DEFAULT_INC_CATS = [
   {id:"inc_other",     label:"其他", iconKey:"other",   color:"#B0A898", subs:[]},
 ];
 
-const USERS = {me:{label:"淯",color:"#6C63FF"},husband:{label:"達",color:"#4FA8E8"}};
+// 名稱從 localStorage 讀取，預設為淯/達
+function getUsers() {
+  return {
+    me:      { label: localStorage.getItem("userName_me")      || "淯", color:"#6C63FF" },
+    husband: { label: localStorage.getItem("userName_husband") || "達", color:"#4FA8E8" },
+  };
+}
+let USERS = getUsers();
 const MONTHS = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
 
 // ── 狀態 ─────────────────────────────────────────────
@@ -458,6 +492,7 @@ db.ref("records").on("value", snap => {
   records=Object.entries(val).map(([key,v])=>({_key:key,...v}));
   document.getElementById("loading").style.display="none";
   document.getElementById("dashboard").style.display="block";
+  initIdentity();
 
   // 找最新一筆，顯示最後記帳資訊
   if(records.length>0){
@@ -486,13 +521,171 @@ db.ref("records").on("value", snap => {
   refreshAll();
 });
 
-// ── 月份 ─────────────────────────────────────────────
-function changeMonth(dir){
-  filterMonth=(filterMonth+dir+12)%12;
-  document.getElementById("month-label").textContent=MONTHS[filterMonth];
+// ── 身份設定（裝置綁定 + 改名）────────────────────────
+let deviceUser = localStorage.getItem("deviceUser") || null;
+let identityRenameMode = false;
+
+let identityInited = false;
+function initIdentity(){
+  if(identityInited) return;
+  identityInited = true;
+  USERS = getUsers();
+  if(!deviceUser){
+    showIdentityModal(false);
+  } else {
+    fUser = deviceUser;
+    updateIdentityBadge();
+  }
+}
+
+function showIdentityModal(renameMode){
+  identityRenameMode = !!renameMode;
+  USERS = getUsers();
+  document.getElementById("identity-btn-me").textContent      = USERS.me.label;
+  document.getElementById("identity-btn-husband").textContent = USERS.husband.label;
+  if(renameMode){
+    document.getElementById("identity-emoji").textContent         = "✏️";
+    document.getElementById("identity-modal-title").textContent   = "設定名稱";
+    document.getElementById("identity-modal-sub").textContent     = "選擇要修改的身份並輸入新名稱";
+    document.getElementById("identity-rename-wrap").style.display = "block";
+    document.getElementById("identity-cancel-btn").style.display  = "block";
+    document.getElementById("identity-name-input").value = USERS[deviceUser]?.label ?? "";
+  } else {
+    document.getElementById("identity-emoji").textContent         = "👋";
+    document.getElementById("identity-modal-title").textContent   = "你是誰？";
+    document.getElementById("identity-modal-sub").textContent     = "選一次就好，之後自動帶入";
+    document.getElementById("identity-rename-wrap").style.display = "none";
+    document.getElementById("identity-cancel-btn").style.display  = "none";
+  }
+  const overlay = document.getElementById("identity-overlay");
+  const modal   = document.getElementById("identity-modal");
+  overlay.style.display = "block";
+  modal.style.display   = "block";
+  requestAnimationFrame(()=>{
+    modal.style.transform = "translate(-50%,-50%) scale(1)";
+    modal.style.opacity   = "1";
+  });
+  if(renameMode) setTimeout(()=>document.getElementById("identity-name-input").focus(), 280);
+}
+
+function hideIdentityModal(){
+  const modal   = document.getElementById("identity-modal");
+  const overlay = document.getElementById("identity-overlay");
+  modal.style.transform = "translate(-50%,-50%) scale(.92)";
+  modal.style.opacity   = "0";
+  setTimeout(()=>{ modal.style.display="none"; overlay.style.display="none"; }, 220);
+}
+
+function setIdentity(user){
+  if(identityRenameMode){
+    const newName = document.getElementById("identity-name-input").value.trim();
+    if(newName){ localStorage.setItem(`userName_${user}`, newName); USERS = getUsers(); }
+  }
+  deviceUser = user;
+  localStorage.setItem("deviceUser", user);
+  fUser = user;
+  updateIdentityBadge();
+  hideIdentityModal();
   refreshAll();
 }
-document.getElementById("month-label").textContent=MONTHS[filterMonth];
+
+function updateIdentityBadge(){
+  USERS = getUsers();
+  const badge = document.getElementById("form-identity-badge");
+  if(!badge) return;
+  const u = USERS[deviceUser] ?? USERS["me"];
+  badge.innerHTML = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${u.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span style="color:${u.color}">${u.label}</span>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${u.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  `;
+  badge.style.background = u.color + "15";
+  badge.onclick = () => showIdentityModal(true);
+}
+
+// ── 月份選擇器 ────────────────────────────────────────
+let pickerYear = filterYear;
+
+function openMonthPicker(){
+  pickerYear = filterYear;
+  renderPickerMonths();
+  const overlay = document.getElementById("month-picker-overlay");
+  const picker  = document.getElementById("month-picker");
+  overlay.style.display = "block";
+  picker.style.display  = "block";
+  requestAnimationFrame(()=>{
+    picker.style.transform = "translate(-50%,-50%) scale(1)";
+    picker.style.opacity   = "1";
+  });
+}
+
+function closeMonthPicker(){
+  const picker  = document.getElementById("month-picker");
+  const overlay = document.getElementById("month-picker-overlay");
+  picker.style.transform = "translate(-50%,-50%) scale(.94)";
+  picker.style.opacity   = "0";
+  setTimeout(()=>{
+    picker.style.display  = "none";
+    overlay.style.display = "none";
+  }, 180);
+}
+
+function changePickerYear(dir){
+  pickerYear += dir;
+  renderPickerMonths();
+}
+
+function renderPickerMonths(){
+  document.getElementById("picker-year").textContent = pickerYear;
+  const el = document.getElementById("picker-months");
+  el.innerHTML = "";
+  const now = new Date();
+  MONTHS.forEach((m, i) => {
+    const isActive  = i === filterMonth && pickerYear === filterYear;
+    const isToday   = i === now.getMonth() && pickerYear === now.getFullYear();
+    const btn = document.createElement("button");
+    btn.textContent = m.replace("月","");
+    btn.style.cssText = `
+      padding:10px 0; border-radius:10px; border:none; font-family:inherit;
+      font-size:13px; font-weight:600; cursor:pointer; transition:all .15s;
+      background:${isActive?"linear-gradient(135deg,#6C63FF,#4FA8E8)":isToday?"rgba(108,99,255,.08)":"#F4F6FB"};
+      color:${isActive?"#fff":isToday?"#6C63FF":"#5A6080"};
+      box-shadow:${isActive?"0 3px 10px rgba(108,99,255,.3)":"none"};
+      position:relative;
+    `;
+    if(isToday && !isActive){
+      // 底部小點
+      const dot = document.createElement("span");
+      dot.style.cssText="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#6C63FF;display:block";
+      btn.style.position="relative";
+      btn.appendChild(dot);
+    }
+    btn.onclick = () => {
+      filterMonth = i;
+      filterYear  = pickerYear;
+      updateMonthLabel();
+      refreshAll();
+      closeMonthPicker();
+    };
+    el.appendChild(btn);
+  });
+}
+
+// 月份 ─────────────────────────────────────────────
+let filterYear = new Date().getFullYear();
+
+function updateMonthLabel(){
+  document.getElementById("month-label").textContent = `${filterYear}／${MONTHS[filterMonth]}`;
+}
+
+function changeMonth(dir){
+  filterMonth += dir;
+  if(filterMonth > 11){ filterMonth = 0; filterYear++; }
+  if(filterMonth < 0){  filterMonth = 11; filterYear--; }
+  updateMonthLabel();
+  refreshAll();
+}
+updateMonthLabel();
 
 // ── 視圖切換 ──────────────────────────────────────────
 function showView(v){
@@ -515,9 +708,10 @@ function toggleAdd(){
 const lastSel = { expense:{ category:"", sub:"" }, income:{ category:"", sub:"" } };
 
 function resetForm(){
-  editingKey=null; fUser="me"; fPayment="cash";
+  editingKey=null;
+  fUser = deviceUser || "me";
+  fPayment="cash";
   fType="expense";
-  // 還原上次選的類別，沒有則用第一個
   const last=lastSel[fType];
   const cats=categories;
   fCategory=(last.category && cats.find(c=>c.id===last.category)) ? last.category : (cats[0]?.id??"");
@@ -528,6 +722,7 @@ function resetForm(){
   document.getElementById("form-title").textContent="新增支出";
   document.getElementById("btn-save").textContent="記　錄";
   document.getElementById("btn-save").className="btn-save";
+  updateIdentityBadge();
   renderFormUI();
 }
 function setType(t){
@@ -553,7 +748,7 @@ function setPayment(p){fPayment=p;renderPaymentBtns();}
 function setCat(id){ fCategory=id; fSub=""; lastSel[fType]={category:id,sub:""}; renderCatChips(); renderSubChips(); }
 function setSub(s){ fSub=s; lastSel[fType].sub=s; renderSubChips(); }
 
-function renderFormUI(){renderTypeBtns();renderUserBtns();renderPaymentBtns();renderCatChips();renderSubChips();}
+function renderFormUI(){renderTypeBtns();renderPaymentBtns();renderCatChips();renderSubChips();}
 
 function renderTypeBtns(){
   document.getElementById("type-exp").className="type-btn"+(fType==="expense"?" active-exp":"");
