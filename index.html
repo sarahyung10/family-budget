@@ -11,7 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Josefin+Sans:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Serif+TC:wght@600;700&display=swap');
 :root {
   --bg:#0A0A0F;
   --bg2:#111118;
@@ -46,7 +46,7 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 ::-webkit-scrollbar{width:2px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 
-#header{background:rgba(10,10,15,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:var(--dark);padding-left:20px;padding-right:20px;padding-bottom:14px;padding-top:max(52px,calc(env(safe-area-inset-top,0px) + 14px));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);width:100%}
+#header{background:rgba(10,10,15,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:var(--dark);padding-left:20px;padding-right:20px;padding-bottom:14px;padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 20px));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);width:100%}
 .header-title{font-size:20px;font-weight:700}
 .header-last{font-size:10px;color:var(--light);margin-top:3px;letter-spacing:.3px}
 .month-nav{display:flex;align-items:center;background:rgba(255,255,255,.05);border-radius:20px;padding:3px 6px;border:1px solid var(--border)}
@@ -192,7 +192,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 <div id="header">
   <div>
     <div class="header-title">
-      <span style="font-family:'Josefin Sans',sans-serif;font-size:20px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,#fff 20%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase">Yu家記帳</span>
+      <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
   </div>
