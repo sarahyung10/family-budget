@@ -327,6 +327,10 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
           刷卡
         </button>
+        <button class="toggle-btn" id="btn-transfer" onclick="setPayment('transfer')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          轉帳
+        </button>
       </div>
     </div>
 
@@ -980,6 +984,7 @@ function updateInstPreview(){
 function renderPaymentBtns(){
   document.getElementById("btn-cash").className="toggle-btn"+(fPayment==="cash"?" active-blue":"");
   document.getElementById("btn-card").className="toggle-btn"+(fPayment==="card"?" active-blue":"");
+  document.getElementById("btn-transfer").className="toggle-btn"+(fPayment==="transfer"?" active-blue":"");
 }
 
 function renderCatChips(){
