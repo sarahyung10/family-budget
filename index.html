@@ -1508,88 +1508,123 @@ function renderRecords(f){
   const el=document.getElementById("records-inner"); el.innerHTML="";
   const sorted=[...f].sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(sorted.length===0){el.innerHTML='<div class="empty">無記錄</div>';return;}
-  sorted.forEach((r,i)=>{
-    const allCats=[...categories,...incCategories];
-    const cat=allCats.find(c=>c.id===r.category)??{iconKey:"other",label:r.category,color:"#B0A898"};
-    const user=USERS[r.user]??{label:"?",color:"#B0A898"};
-    const isIncome=r.type==="income";
-    const d=new Date(r.date);
-    const isFirst=i===0,isLast=i===sorted.length-1;
-    const pos=isFirst&&isLast?"only":isFirst?"first":isLast?"last":"";
 
-    const outer=document.createElement("div");
-    outer.className="swipe-outer "+pos;
+  // 依日期分組
+  const groups=[];
+  const groupMap={};
+  sorted.forEach(r=>{
+    const key=r.date||"";
+    if(!groupMap[key]){ groupMap[key]=[]; groups.push({date:key,records:groupMap[key]}); }
+    groupMap[key].push(r);
+  });
 
-    // 底層按鈕
-    const actions=document.createElement("div");
-    actions.className="swipe-actions";
-    actions.innerHTML=`
-      <button class="swipe-btn edit" onclick="handleEdit('${r._key}')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        編輯
-      </button>
-      <button class="swipe-btn delete" onclick="deleteRecord('${r._key}')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-        刪除
-      </button>`;
+  const allCats=[...categories,...incCategories];
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const yesterdayStr=new Date(now-86400000).toISOString().slice(0,10);
 
-    // 付款圖示
-    const payIcon = r.payment==="cash"
-      ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B0A898" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`
-      : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B0A898" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`;
+  groups.forEach(({date,records:recs})=>{
+    // ── 日期分隔列 ──
+    const d=new Date(date);
+    const mm=d.getMonth()+1, dd=d.getDate();
+    const weekday=["日","一","二","三","四","五","六"][d.getDay()];
+    let dateLabel;
+    if(date===todayStr) dateLabel=`今天　${mm}/${dd}　週${weekday}`;
+    else if(date===yesterdayStr) dateLabel=`昨天　${mm}/${dd}　週${weekday}`;
+    else dateLabel=`${mm} 月 ${dd} 日　週${weekday}`;
 
-    const inner=document.createElement("div");
-    inner.className="swipe-inner";
-    inner.innerHTML=`
-      <div class="rec-icon" style="background:${cat.color}">${getIcon(cat.iconKey||"other",18,"#fff")}</div>
-      <div class="rec-info">
-        <div class="rec-cat">${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}</div>
-        <div class="rec-note-small">${escHtml(r.note==="－"?"":r.note)}</div>
-        <div class="rec-meta">
-          <span>${d.getMonth()+1}/${d.getDate()}</span>
-          <span>·</span>${payIcon}
-        </div>
+    // 當天總額
+    const dayTotal=recs.reduce((s,r)=>s+(r.type==="income"?0:(r.amount||0)),0);
+    const dayInc  =recs.reduce((s,r)=>s+(r.type==="income"?(r.amount||0):0),0);
+
+    const sep=document.createElement("div");
+    sep.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:14px 2px 6px;";
+    sep.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:3px;height:14px;border-radius:2px;background:linear-gradient(135deg,var(--purple),var(--cyan));flex-shrink:0"></div>
+        <span style="font-size:12px;font-weight:600;color:#8A90B8;letter-spacing:1px">${dateLabel}</span>
       </div>
-      <div class="rec-user" style="background:${user.color}18;color:${user.color}">${user.label}</div>
-      ${r.installIndex ? `<div class="inst-badge">${r.installIndex}／${r.installTotal}</div>` : ""}
-      ${r.recurPlanId && !r.installIndex ? `<div class="recur-badge">週期</div>` : ""}
-      <div class="rec-amount${isIncome?" income":""}">${isIncome?"+":""}${(r.amount||0).toLocaleString()}</div>`;
+      <div style="font-size:11px;font-weight:600;text-align:right">
+        ${dayInc>0?`<span style="color:var(--green);margin-right:6px">+${dayInc.toLocaleString()}</span>`:""}
+        ${dayTotal>0?`<span style="color:#6A7098">-${dayTotal.toLocaleString()}</span>`:""}
+      </div>`;
+    el.appendChild(sep);
 
-    // 滑動邏輯（RAF 優化，減少卡頓）
-    let startX=null,startY=null,offset=0,rafId=null,locked=false;
-    const THRESHOLD=80,MAX=140;
-    inner.addEventListener("touchstart",e=>{
-      startX=e.touches[0].clientX;
-      startY=e.touches[0].clientY;
-      locked=false;
-      inner.style.transition="none";
-    },{passive:true});
-    inner.addEventListener("touchmove",e=>{
-      if(startX===null)return;
-      const dx=startX-e.touches[0].clientX;
-      const dy=Math.abs(e.touches[0].clientY-startY);
-      // 垂直滑動時不觸發水平
-      if(!locked&&dy>dx){startX=null;return;}
-      locked=true;
-      if(dx>3){
-        const target=Math.min(Math.max(dx,0),MAX);
+    // ── 該天的記錄列表 ──
+    recs.forEach((r,i)=>{
+      const cat=allCats.find(c=>c.id===r.category)??{iconKey:"other",label:r.category,color:"#B0A898"};
+      const user=USERS[r.user]??{label:"?",color:"#B0A898"};
+      const isIncome=r.type==="income";
+      const isFirst=i===0, isLast=i===recs.length-1;
+
+      const outer=document.createElement("div");
+      outer.className="swipe-outer";
+      outer.style.borderRadius=isFirst&&isLast?"12px":isFirst?"12px 12px 0 0":isLast?"0 0 12px 12px":"0";
+
+      const actions=document.createElement("div");
+      actions.className="swipe-actions";
+      actions.innerHTML=`
+        <button class="swipe-btn edit" onclick="handleEdit('${r._key}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          編輯
+        </button>
+        <button class="swipe-btn delete" onclick="deleteRecord('${r._key}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          刪除
+        </button>`;
+
+      const payIcon=r.payment==="cash"
+        ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`
+        : r.payment==="transfer"
+        ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>`
+        : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`;
+
+      const inner=document.createElement("div");
+      inner.className="swipe-inner";
+      // 同一天多筆時，非最後一筆加細分隔線
+      if(!isLast) inner.style.borderBottom="1px solid rgba(255,255,255,.04)";
+      inner.innerHTML=`
+        <div class="rec-icon" style="background:${cat.color}">${getIcon(cat.iconKey||"other",18,"#fff")}</div>
+        <div class="rec-info">
+          <div class="rec-cat">${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}</div>
+          <div class="rec-note-small">${escHtml(r.note==="－"?"":r.note)}</div>
+          <div class="rec-meta">${payIcon}</div>
+        </div>
+        <div class="rec-user" style="background:${user.color}18;color:${user.color}">${user.label}</div>
+        ${r.installIndex?`<div class="inst-badge">${r.installIndex}／${r.installTotal}</div>`:""}
+        ${r.recurPlanId&&!r.installIndex?`<div class="recur-badge">週期</div>`:""}
+        <div class="rec-amount${isIncome?" income":""}">${isIncome?"+":""}${(r.amount||0).toLocaleString()}</div>`;
+
+      // 滑動邏輯
+      let startX=null,startY=null,offset=0,rafId=null,locked=false;
+      const THRESHOLD=80,MAX=140;
+      inner.addEventListener("touchstart",e=>{
+        startX=e.touches[0].clientX; startY=e.touches[0].clientY;
+        locked=false; inner.style.transition="none";
+      },{passive:true});
+      inner.addEventListener("touchmove",e=>{
+        if(startX===null)return;
+        const dx=startX-e.touches[0].clientX;
+        const dy=Math.abs(e.touches[0].clientY-startY);
+        if(!locked&&dy>dx){startX=null;return;}
+        locked=true;
+        if(dx>3){
+          const target=Math.min(Math.max(dx,0),MAX);
+          if(rafId)cancelAnimationFrame(rafId);
+          rafId=requestAnimationFrame(()=>{ offset=target; inner.style.transform=`translateX(-${offset}px)`; });
+        }
+      },{passive:true});
+      inner.addEventListener("touchend",()=>{
         if(rafId)cancelAnimationFrame(rafId);
-        rafId=requestAnimationFrame(()=>{
-          offset=target;
-          inner.style.transform=`translateX(-${offset}px)`;
-        });
-      }
-    },{passive:true});
-    inner.addEventListener("touchend",()=>{
-      if(rafId)cancelAnimationFrame(rafId);
-      inner.style.transition="transform .22s ease";
-      offset=offset>THRESHOLD?MAX:0;
-      inner.style.transform=offset?`translateX(-${MAX}px)`:"translateX(0)";
-      startX=null;startY=null;locked=false;
-    });
+        inner.style.transition="transform .22s ease";
+        offset=offset>THRESHOLD?MAX:0;
+        inner.style.transform=offset?`translateX(-${MAX}px)`:"translateX(0)";
+        startX=null; startY=null; locked=false;
+      });
 
-    outer.appendChild(actions); outer.appendChild(inner);
-    el.appendChild(outer);
+      outer.appendChild(actions); outer.appendChild(inner);
+      el.appendChild(outer);
+    });
   });
 }
 </script>
