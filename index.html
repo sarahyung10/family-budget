@@ -80,12 +80,12 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 .hint{font-size:9px;opacity:.6;margin-left:6px;font-weight:400;text-transform:none;letter-spacing:0}
 .empty{color:var(--light);font-size:13px;text-align:center;padding:32px 0}
 
-.swipe-outer{position:relative;overflow:hidden;margin-bottom:6px;border-radius:var(--radius-sm)}
+.swipe-outer{position:relative;overflow:hidden;margin-bottom:6px;border-radius:var(--radius-sm);-webkit-mask-image:-webkit-radial-gradient(white,black);transform:translateZ(0)}
 .swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:stretch}
 .swipe-btn{width:72px;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .swipe-btn.edit{background:linear-gradient(135deg,var(--blue),var(--cyan2));border-radius:0 var(--radius-sm) var(--radius-sm) 0}
 .swipe-btn.delete{background:linear-gradient(135deg,#be123c,var(--red));border-radius:0 var(--radius-sm) var(--radius-sm) 0}
-.swipe-inner{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card-solid);border:1px solid var(--border);border-radius:var(--radius-sm);position:relative;z-index:1;transition:transform .25s ease;touch-action:pan-y;will-change:transform}
+.swipe-inner{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card-solid);border:1px solid var(--border);border-radius:var(--radius-sm);position:relative;z-index:1;transition:transform .3s cubic-bezier(.25,.46,.45,.94);touch-action:pan-y;will-change:transform}
 
 .rec-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .rec-info{flex:1;min-width:0}
@@ -835,7 +835,7 @@ function resetForm(){
   const instField=document.getElementById("installment-field");
   const recurField=document.getElementById("recurring-field");
   if(instField) instField.style.display="none";
-  if(recurField) recurField.style.display="none";
+  if(recurField) recurField.style.display="block";
   document.getElementById("inp-amount").value="";
   document.getElementById("inp-note").value="";
   document.getElementById("inp-date").value=today();
@@ -1140,7 +1140,7 @@ function saveRecurringPlan(baseRec, amount){
     dayOfMonth:fRecurDay,
     defaultAmount:amount, note:baseRec.note,
     category:baseRec.category, sub:baseRec.sub||"",
-    user:baseRec.user, recordType:baseRec.type||"expense",
+    user:baseRec.user, payment:baseRec.payment||"cash", recordType:baseRec.type||"expense",
     startDate:baseRec.date, active:true, lastGeneratedDate:""
   });
 }
@@ -1236,7 +1236,7 @@ async function confirmRecurEntry(){
   const amount=parseFloat(document.getElementById("confirm-amount-input").value);
   if(!amount||isNaN(amount)) return;
   const todayStr=new Date().toISOString().slice(0,10);
-  const rec={user:plan.user,category:plan.category,sub:plan.sub||"",amount,note:plan.note,date:todayStr,payment:"card",type:plan.recordType||"expense",recurPlanId:plan.planId,timestamp:Date.now()};
+  const rec={user:plan.user,category:plan.category,sub:plan.sub||"",amount,note:plan.note,date:todayStr,payment:plan.payment||"cash",type:plan.recordType||"expense",recurPlanId:plan.planId,timestamp:Date.now()};
   await db.ref("records").push(rec);
   await db.ref("recurring/"+plan.planId).update({lastGeneratedDate:todayStr,defaultAmount:amount});
   closeConfirmModal();
@@ -1595,29 +1595,37 @@ function renderRecords(f){
         ${r.recurPlanId&&!r.installIndex?`<div class="recur-badge">週期</div>`:""}
         <div class="rec-amount${isIncome?" income":""}">${isIncome?"+":""}${(r.amount||0).toLocaleString()}</div>`;
 
-      // 滑動邏輯
-      let startX=null,startY=null,offset=0,rafId=null,locked=false;
-      const THRESHOLD=80,MAX=140;
+      // 滑動邏輯（順滑版）
+      let startX=null,startY=null,lastX=null,lastT=null,offset=0,rafId=null,locked=false,isOpen=false;
+      const THRESHOLD=60,MAX=144;
       inner.addEventListener("touchstart",e=>{
         startX=e.touches[0].clientX; startY=e.touches[0].clientY;
+        lastX=startX; lastT=Date.now();
         locked=false; inner.style.transition="none";
+        // 如果已開啟，點擊關閉
+        if(isOpen){ inner.style.transition="transform .3s cubic-bezier(.25,.46,.45,.94)"; inner.style.transform="translateX(0)"; offset=0; isOpen=false; }
       },{passive:true});
       inner.addEventListener("touchmove",e=>{
         if(startX===null)return;
         const dx=startX-e.touches[0].clientX;
         const dy=Math.abs(e.touches[0].clientY-startY);
-        if(!locked&&dy>dx){startX=null;return;}
-        locked=true;
-        if(dx>3){
-          const target=Math.min(Math.max(dx,0),MAX);
-          if(rafId)cancelAnimationFrame(rafId);
-          rafId=requestAnimationFrame(()=>{ offset=target; inner.style.transform=`translateX(-${offset}px)`; });
-        }
-      },{passive:true});
-      inner.addEventListener("touchend",()=>{
+        if(!locked&&dy>Math.abs(dx)&&dy>6){startX=null;return;}
+        if(Math.abs(dx)>6) locked=true;
+        if(!locked)return;
+        e.stopPropagation();
+        const target=Math.min(Math.max(dx,0),MAX);
+        lastX=e.touches[0].clientX; lastT=Date.now();
         if(rafId)cancelAnimationFrame(rafId);
-        inner.style.transition="transform .22s ease";
-        offset=offset>THRESHOLD?MAX:0;
+        rafId=requestAnimationFrame(()=>{ offset=target; inner.style.transform=`translateX(-${offset}px)`; });
+      },{passive:true});
+      inner.addEventListener("touchend",e=>{
+        if(rafId)cancelAnimationFrame(rafId);
+        if(!locked){ startX=null; startY=null; return; }
+        // 速度判斷
+        const velocity=(startX-lastX)/(Date.now()-lastT+1);
+        inner.style.transition="transform .3s cubic-bezier(.25,.46,.45,.94)";
+        if(offset>THRESHOLD||velocity>0.4){ offset=MAX; isOpen=true; }
+        else { offset=0; isOpen=false; }
         inner.style.transform=offset?`translateX(-${MAX}px)`:"translateX(0)";
         startX=null; startY=null; locked=false;
       });
