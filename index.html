@@ -1392,6 +1392,8 @@ function calcEnterOrApply(){
   else { closeCalculator(true); }
 }
 
+function saveRecord(){
+
 
   const amount=parseFloat(document.getElementById("inp-amount").value);
   if(!amount||isNaN(amount)){document.getElementById("inp-amount").focus();return;}
