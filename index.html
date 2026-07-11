@@ -40,7 +40,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{overflow-x:hidden}
-body{font-family:'Inter','Noto Sans TC','PingFang TC',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;min-height:-webkit-fill-available;overscroll-behavior:none;overflow-x:hidden;max-width:100vw}
+body{font-family:'Inter','Noto Sans TC','PingFang TC',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;min-height:-webkit-fill-available;overscroll-behavior:none;overflow-x:hidden;max-width:100vw;font-size:15px}
 body::before{content:'';position:fixed;top:-40%;left:-20%;width:60%;height:80%;background:radial-gradient(ellipse,rgba(168,85,247,.07) 0%,transparent 70%);pointer-events:none;z-index:0}
 body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60%;background:radial-gradient(ellipse,rgba(0,229,255,.05) 0%,transparent 70%);pointer-events:none;z-index:0}
 ::-webkit-scrollbar{width:2px}
@@ -63,16 +63,16 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 #total-card::before{content:'';position:absolute;top:-50px;right:-30px;width:140px;height:140px;background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%);pointer-events:none}
 #total-card::after{content:'';position:absolute;bottom:-40px;left:10px;width:100px;height:100px;background:radial-gradient(circle,rgba(0,229,255,.15),transparent 70%);pointer-events:none}
 #total-card .lbl{font-size:10px;font-weight:500;color:var(--mid);margin-bottom:10px;letter-spacing:1.5px;text-transform:uppercase}
-#total-amount{font-size:38px;font-weight:700;background:linear-gradient(135deg,#fff 20%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;line-height:1}
+#total-amount{font-size:40px;font-weight:700;background:linear-gradient(135deg,#fff 20%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;line-height:1}
 
 .card{margin:12px 16px 0;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:20px 16px;backdrop-filter:blur(10px)}
-.card-label{font-size:10px;font-weight:600;color:var(--mid);margin-bottom:14px;letter-spacing:1.5px;text-transform:uppercase}
+.card-label{font-size:11px;font-weight:600;color:var(--mid);margin-bottom:14px;letter-spacing:1.5px;text-transform:uppercase}
 #chart-wrap{position:relative;width:190px;height:190px;margin:0 auto}
 #chart-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:14px}
 .legend-item{display:flex;align-items:center;gap:7px}
 .legend-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.legend-name{font-size:11px;color:var(--mid);font-weight:500}
-.legend-val{font-size:11px;color:var(--dark);font-weight:600}
+.legend-name{font-size:12px;color:var(--mid);font-weight:500}
+.legend-val{font-size:12px;color:var(--dark);font-weight:600}
 .empty-chart{padding:40px 0;text-align:center;color:var(--light);font-size:13px}
 
 #records-list{margin:12px 16px 0}
@@ -87,19 +87,19 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 .swipe-btn.delete{background:linear-gradient(135deg,#be123c,var(--red));border-radius:0 var(--radius-sm) var(--radius-sm) 0}
 .swipe-inner{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card-solid);border:1px solid var(--border);border-radius:var(--radius-sm);position:relative;z-index:1;transition:transform .3s cubic-bezier(.25,.46,.45,.94);touch-action:pan-y;will-change:transform}
 
-.rec-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rec-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .rec-info{flex:1;min-width:0}
-.rec-cat{font-size:13px;color:var(--dark);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.rec-note-small{font-size:11px;color:var(--mid);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rec-meta{font-size:10px;color:var(--light);display:flex;align-items:center;gap:4px}
+.rec-cat{font-size:15px;color:var(--dark);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.rec-note-small{font-size:13px;color:var(--mid);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-meta{font-size:11px;color:var(--light);display:flex;align-items:center;gap:4px}
 .rec-user{font-size:10px;font-weight:700;border-radius:6px;padding:2px 7px;flex-shrink:0;letter-spacing:.5px}
-.rec-amount{font-size:15px;font-weight:700;color:var(--dark);flex-shrink:0;min-width:56px;text-align:right}
+.rec-amount{font-size:17px;font-weight:700;color:var(--dark);flex-shrink:0;min-width:64px;text-align:right}
 .rec-amount.income{background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
 #form-wrap{margin:14px 16px;background:var(--card-solid);border-radius:var(--radius);border:1px solid var(--border);padding:22px 18px;animation:fadeIn .2s ease;overflow-x:hidden}
 .form-title{font-size:10px;font-weight:600;color:var(--light);margin-bottom:0;letter-spacing:1.5px;text-transform:uppercase}
 .field{margin-bottom:16px}
-.field-label{font-size:10px;font-weight:600;color:var(--mid);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none;letter-spacing:1px;text-transform:uppercase}
+.field-label{font-size:11px;font-weight:600;color:var(--mid);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;user-select:none;letter-spacing:1px;text-transform:uppercase}
 .field-link{font-size:10px;color:var(--cyan);font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0}
 .btn-row{display:flex;gap:8px}
 
@@ -119,7 +119,7 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 .sub-chip{padding:6px 14px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
 
 input[type=text],input[type=number],input[type=date]{width:100%;max-width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:rgba(255,255,255,.03);font-family:inherit;font-size:14px;color:var(--dark);-webkit-appearance:none;appearance:none}
-input[type=number]{font-size:26px;font-weight:700}
+input[type=text]#inp-amount{font-size:30px;font-weight:700}
 input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px rgba(0,229,255,.07)}
 
 .btn-save{width:100%;padding:14px 0;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;box-shadow:0 0 28px rgba(124,58,237,.35),0 0 56px rgba(0,184,217,.15);letter-spacing:.5px}
@@ -172,6 +172,15 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 
 .recur-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(168,85,247,.12);color:#A855F7;border:1px solid rgba(168,85,247,.25);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
 .pending-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.25);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
+/* 計算機鍵盤 */
+.calc-key{padding:18px 0;border:none;border-radius:14px;background:rgba(255,255,255,.05);color:#F0F2FF;font-family:'Inter',sans-serif;font-size:20px;font-weight:600;cursor:pointer;transition:all .12s}
+.calc-key:active{background:rgba(255,255,255,.12);transform:scale(.95)}
+.calc-key.calc-fn{background:rgba(255,255,255,.03);color:#8A90B8;font-size:16px}
+.calc-key.calc-op{background:rgba(0,229,255,.08);color:var(--cyan);font-size:22px}
+.calc-key.calc-op:active{background:rgba(0,229,255,.18)}
+.calc-key.calc-confirm{background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;font-size:16px;font-weight:700;box-shadow:0 0 16px rgba(124,58,237,.3)}
+.calc-key.calc-confirm:active{transform:scale(.95);opacity:.9}
+
 .inst-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .inst-btn.active{border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.1);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.15)}
 /* 分期標籤（明細列） */
@@ -251,6 +260,38 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
   <div style="display:flex;gap:8px">
     <button onclick="closeConfirmModal()" style="flex:1;padding:12px 0;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#6A7098;cursor:pointer">取消</button>
     <button onclick="confirmRecurEntry()" style="flex:2;padding:12px 0;background:linear-gradient(135deg,#7C3AED,#00B8D9);border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 0 16px rgba(124,58,237,.3)">確認入帳</button>
+  </div>
+</div>
+
+<!-- 計算機鍵盤 -->
+<div id="calc-overlay" onclick="closeCalculator(false)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;backdrop-filter:blur(6px)"></div>
+<div id="calc-panel" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:501;background:#13131C;border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);box-shadow:0 -10px 40px rgba(0,0,0,.6)">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
+  <div id="calc-expr" style="font-size:13px;color:#6A7098;text-align:right;min-height:18px;margin-bottom:4px;padding:0 4px;overflow-x:auto;white-space:nowrap"></div>
+  <div id="calc-display" style="font-size:36px;font-weight:700;color:#F0F2FF;text-align:right;margin-bottom:16px;padding:0 4px;overflow-x:auto;white-space:nowrap">0</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    <button class="calc-key calc-fn" onclick="calcClear()">C</button>
+    <button class="calc-key calc-fn" onclick="calcBackspace()">⌫</button>
+    <button class="calc-key calc-op" onclick="calcOp('÷')">÷</button>
+    <button class="calc-key calc-op" onclick="calcOp('×')">×</button>
+
+    <button class="calc-key" onclick="calcNum('7')">7</button>
+    <button class="calc-key" onclick="calcNum('8')">8</button>
+    <button class="calc-key" onclick="calcNum('9')">9</button>
+    <button class="calc-key calc-op" onclick="calcOp('-')">－</button>
+
+    <button class="calc-key" onclick="calcNum('4')">4</button>
+    <button class="calc-key" onclick="calcNum('5')">5</button>
+    <button class="calc-key" onclick="calcNum('6')">6</button>
+    <button class="calc-key calc-op" onclick="calcOp('+')">＋</button>
+
+    <button class="calc-key" onclick="calcNum('1')">1</button>
+    <button class="calc-key" onclick="calcNum('2')">2</button>
+    <button class="calc-key" onclick="calcNum('3')">3</button>
+    <button class="calc-key calc-confirm" id="calc-equals" onclick="calcEnterOrApply()" style="grid-row:span 2">確定</button>
+
+    <button class="calc-key" onclick="calcNum('0')" style="grid-column:span 2">0</button>
+    <button class="calc-key" onclick="calcNum('.')">.</button>
   </div>
 </div>
 
@@ -430,7 +471,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
     </div>
     <div class="field">
       <div class="field-label">金額（NT$）</div>
-      <input type="number" id="inp-amount" placeholder="0" inputmode="numeric" oninput="if(fInstall)updateInstPreview()">
+      <input type="text" id="inp-amount" placeholder="0" readonly onclick="openCalculator()" style="cursor:pointer">
     </div>
     <div class="field">
       <div class="field-label">備註</div>
@@ -1245,7 +1286,113 @@ async function confirmRecurEntry(){
 }
 
 // ── 儲存 ──────────────────────────────────────────────
-function saveRecord(){
+// ── 計算機鍵盤 ────────────────────────────────────────
+let calcTokens=[];      // 例如 ["120","+","30"]
+let calcCurrent="0";    // 目前正在輸入的數字
+let calcResultShown=false;
+
+function openCalculator(){
+  const existing=document.getElementById("inp-amount").value;
+  calcTokens=[];
+  calcCurrent = existing && existing!=="0" ? existing : "0";
+  calcResultShown=false;
+  updateCalcDisplay();
+  const overlay=document.getElementById("calc-overlay");
+  const panel=document.getElementById("calc-panel");
+  overlay.style.display="block"; panel.style.display="block";
+  requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
+}
+
+function closeCalculator(apply){
+  const panel=document.getElementById("calc-panel");
+  const overlay=document.getElementById("calc-overlay");
+  panel.style.transform="translateY(100%)";
+  setTimeout(()=>{ panel.style.display="none"; overlay.style.display="none"; },260);
+  if(apply){
+    const val=calcEvaluate();
+    document.getElementById("inp-amount").value = val || "";
+    if(typeof fInstall!=="undefined" && fInstall) updateInstPreview();
+  }
+}
+
+function calcNum(n){
+  if(calcResultShown){ calcTokens=[]; calcCurrent="0"; calcResultShown=false; }
+  if(n==="."){
+    if(calcCurrent.includes(".")) return;
+    calcCurrent = calcCurrent==="0" ? "0." : calcCurrent+".";
+  } else {
+    calcCurrent = calcCurrent==="0" ? n : calcCurrent+n;
+  }
+  updateCalcDisplay();
+}
+
+function calcOp(op){
+  calcResultShown=false;
+  if(calcTokens.length && !isNaN(parseFloat(calcTokens[calcTokens.length-1]))===false){
+    // 上一個是運算子，取代它
+  }
+  const lastIsOp = calcTokens.length>0 && ["+","-","×","÷"].includes(calcTokens[calcTokens.length-1]);
+  if(lastIsOp){
+    calcTokens[calcTokens.length-1]=op;
+  } else {
+    calcTokens.push(calcCurrent, op);
+    calcCurrent="0";
+  }
+  updateCalcDisplay();
+}
+
+function calcBackspace(){
+  if(calcCurrent.length>1) calcCurrent=calcCurrent.slice(0,-1);
+  else calcCurrent="0";
+  updateCalcDisplay();
+}
+
+function calcClear(){
+  calcTokens=[]; calcCurrent="0"; calcResultShown=false;
+  updateCalcDisplay();
+}
+
+function calcEvaluate(){
+  const tokens=[...calcTokens, calcCurrent];
+  // 建立可計算的字串（× ÷ 轉成 JS 運算子）
+  let expr="";
+  tokens.forEach(t=>{
+    if(t==="×") expr+="*";
+    else if(t==="÷") expr+="/";
+    else if(t==="+"||t==="-") expr+=t;
+    else expr+=t;
+  });
+  try{
+    // eslint-disable-next-line no-eval
+    const result=Function('"use strict";return ('+expr+')')();
+    if(isNaN(result)||!isFinite(result)) return null;
+    return Math.round(result*100)/100;
+  }catch(e){ return null; }
+}
+
+function calcEnter(){
+  const result=calcEvaluate();
+  if(result===null) return;
+  calcTokens=[]; calcCurrent=String(result); calcResultShown=true;
+  updateCalcDisplay();
+}
+
+function updateCalcDisplay(){
+  const exprEl=document.getElementById("calc-expr");
+  const dispEl=document.getElementById("calc-display");
+  exprEl.textContent = calcTokens.join(" ");
+  dispEl.textContent = calcCurrent;
+  const btn=document.getElementById("calc-equals");
+  btn.textContent = (calcTokens.length>0 && !calcResultShown) ? "＝" : "套用";
+}
+
+// calc-equals 按鈕：若有運算式先算，若沒有就直接套用關閉
+function calcEnterOrApply(){
+  if(calcTokens.length>0 && !calcResultShown){ calcEnter(); }
+  else { closeCalculator(true); }
+}
+
+
   const amount=parseFloat(document.getElementById("inp-amount").value);
   if(!amount||isNaN(amount)){document.getElementById("inp-amount").focus();return;}
 
