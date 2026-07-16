@@ -620,6 +620,7 @@ db.ref("categories").on("value", snap => {
   }
   if (!fCategory && fType==="expense" && categories.length>0) fCategory=categories[0].id;
   refreshAll();
+  refreshFormCategoryUI();
 });
 
 db.ref("inc_categories").on("value", snap => {
@@ -633,7 +634,20 @@ db.ref("inc_categories").on("value", snap => {
   }
   if (!fCategory && fType==="income" && incCategories.length>0) fCategory=incCategories[0].id;
   refreshAll();
+  refreshFormCategoryUI();
 });
+
+// 不論目前在哪個畫面，只要類別資料變化就同步更新表單裡的相關 UI
+function refreshFormCategoryUI(){
+  if(view==="add"){
+    renderCatChips();
+    renderSubChips();
+  } else if(view==="manage"){
+    const cats=fType==="income"?incCategories:categories;
+    const cat=cats.find(c=>c.id===fCategory);
+    if(cat) renderSubTags(cat);
+  }
+}
 
 db.ref("records").on("value", snap => {
   const val=snap.val()||{};
@@ -764,6 +778,7 @@ function changeMonth(dir){
   filterMonth += dir;
   if(filterMonth > 11){ filterMonth = 0; filterYear++; }
   if(filterMonth < 0){  filterMonth = 11; filterYear--; }
+  selectedCatFilter = null;
   updateMonthLabel();
   refreshAll();
 }
@@ -899,6 +914,7 @@ function setType(t){
 }
 function setTab(t){
   dashTab=t;
+  selectedCatFilter=null;
   document.getElementById("tab-exp").className="tab-btn"+(t==="expense"?" active-exp":"");
   document.getElementById("tab-inc").className="tab-btn"+(t==="income"?" active-inc":"");
   document.getElementById("total-lbl").textContent=t==="income"?"本月收入":"本月支出";
@@ -1537,16 +1553,22 @@ function addSub(){
   const dbPath=fType==="income"?"inc_categories":"categories";
   const cats=fType==="income"?incCategories:categories;
   const cat=cats.find(c=>c.id===fCategory);if(!cat)return;
-  db.ref(`${dbPath}/${fCategory}`).update({subs:[...(cat.subs||[]),v]});
+  const newSubs=[...(cat.subs||[]),v];
+  cat.subs=newSubs; // 本地立即更新
+  db.ref(`${dbPath}/${fCategory}`).update({subs:newSubs});
   document.getElementById("inp-newsub").value="";
+  renderSubTags(cat);
 }
 function deleteSub(sub){
   const dbPath=fType==="income"?"inc_categories":"categories";
   const cats=fType==="income"?incCategories:categories;
   const cat=cats.find(c=>c.id===fCategory);if(!cat)return;
-  db.ref(`${dbPath}/${fCategory}`).update({subs:(cat.subs||[]).filter(s=>s!==sub)});
+  const newSubs=(cat.subs||[]).filter(s=>s!==sub);
+  cat.subs=newSubs; // 本地立即更新
+  db.ref(`${dbPath}/${fCategory}`).update({subs:newSubs});
+  renderSubTags(cat);
 }
-function closeManageSubs(){showView("add");}
+function closeManageSubs(){showView("add");renderSubChips();}
 
 // ── 主類別編輯 ────────────────────────────────────────
 function openEditCat(cat){
@@ -1591,11 +1613,20 @@ async function saveCategory(){
   if(newCatMode){
     const newId="cat_"+Date.now();
     const dbPath=ecType==="income"?"inc_categories":"categories";
-    await db.ref(`${dbPath}/${newId}`).set({label,iconKey:ecIconKey,color:ecColor,subs:[]});
+    const newCatData={label,iconKey:ecIconKey,color:ecColor,subs:[]};
+    await db.ref(`${dbPath}/${newId}`).set(newCatData);
     fCategory=newId;
+    // 本地立即插入，不等 Firebase 回調，避免畫面延遲
+    const targetArr = ecType==="income" ? incCategories : categories;
+    if(!targetArr.find(c=>c.id===newId)) targetArr.push({id:newId,...newCatData});
   } else {
     const dbPath=ecType==="income"?"inc_categories":"categories";
-    await db.ref(`${dbPath}/${editCatId}`).update({label,iconKey:ecIconKey,color:ecColor});
+    const updateData={label,iconKey:ecIconKey,color:ecColor};
+    await db.ref(`${dbPath}/${editCatId}`).update(updateData);
+    // 本地立即更新
+    const targetArr = ecType==="income" ? incCategories : categories;
+    const idx=targetArr.findIndex(c=>c.id===editCatId);
+    if(idx>-1) targetArr[idx]={...targetArr[idx],...updateData};
   }
   closeEditCat();
 }
@@ -1603,20 +1634,25 @@ async function deleteCategory(){
   if(!confirm("確定刪除此類別？（已記錄的資料不受影響）"))return;
   const dbPath=ecType==="income"?"inc_categories":"categories";
   await db.ref(`${dbPath}/${editCatId}`).remove();
+  // 本地立即移除
+  if(ecType==="income"){ incCategories=incCategories.filter(c=>c.id!==editCatId); }
+  else { categories=categories.filter(c=>c.id!==editCatId); }
   const cats=ecType==="income"?incCategories:categories;
   if(fCategory===editCatId) fCategory=cats[0]?.id??"";
   closeEditCat();
 }
-function closeEditCat(){showView("add");renderCatChips();}
+function closeEditCat(){showView("add");renderCatChips();renderSubChips();}
 
 // ── 主畫面渲染 ────────────────────────────────────────
+let selectedCatFilter = null; // 目前篩選的類別 id
+
 function refreshAll(){
   if(view==="manage"){
     const cats=fType==="income"?incCategories:categories;
     const cat=cats.find(c=>c.id===fCategory);if(cat)renderSubTags(cat);return;
   }
   if(view!=="dashboard")return;
-  const f=records.filter(r=>new Date(r.date).getMonth()===filterMonth);
+  const f=records.filter(r=>new Date(r.date).getMonth()===filterMonth&&new Date(r.date).getFullYear()===filterYear);
   const incTotal=f.filter(r=>r.type==="income").reduce((s,r)=>s+(r.amount||0),0);
   const expTotal=f.filter(r=>r.type!=="income").reduce((s,r)=>s+(r.amount||0),0);
   document.getElementById("total-amount").textContent="NT$ "+(dashTab==="income"?incTotal:expTotal).toLocaleString();
@@ -1624,7 +1660,41 @@ function refreshAll(){
   document.getElementById("total-expense").textContent=expTotal.toLocaleString();
   // Tab 篩選
   const tabF=f.filter(r=>(dashTab==="income"?r.type==="income":r.type!=="income"));
-  renderPie(tabF); renderRecords(tabF);
+  renderPie(tabF);
+  // 類別篩選（若有選取）套用到明細
+  const recordsF = selectedCatFilter ? tabF.filter(r=>r.category===selectedCatFilter) : tabF;
+  renderRecords(recordsF);
+  renderFilterBadge();
+}
+
+function renderFilterBadge(){
+  let badge=document.getElementById("cat-filter-badge");
+  const listHeader=document.querySelector("#records-list .list-header");
+  if(!listHeader) return;
+  if(!selectedCatFilter){
+    if(badge) badge.remove();
+    return;
+  }
+  const allCats=[...categories,...incCategories];
+  const cat=allCats.find(c=>c.id===selectedCatFilter);
+  if(!badge){
+    badge=document.createElement("span");
+    badge.id="cat-filter-badge";
+    listHeader.appendChild(badge);
+  }
+  badge.style.cssText="margin-left:8px;display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;background:"+(cat?.color??"#8B5CF6")+"22;border:1px solid "+(cat?.color??"#8B5CF6")+"44;color:"+(cat?.color??"#A855F7")+";font-size:10px;font-weight:600;text-transform:none;letter-spacing:.3px;cursor:pointer;vertical-align:middle";
+  badge.innerHTML=`${escHtml(cat?.label??selectedCatFilter)} <span style="opacity:.7">✕</span>`;
+  badge.onclick=(e)=>{ e.stopPropagation(); clearCatFilter(); };
+}
+
+function clearCatFilter(){
+  selectedCatFilter=null;
+  refreshAll();
+}
+
+function selectCatFilter(catId){
+  selectedCatFilter = (selectedCatFilter===catId) ? null : catId; // 再點一次取消篩選
+  refreshAll();
 }
 
 function renderPie(f){
@@ -1635,20 +1705,47 @@ function renderPie(f){
   const map={};
   f.forEach(r=>{map[r.category]=(map[r.category]||0)+(r.amount||0);});
   const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const ids=entries.map(([id])=>id);
   const labels=entries.map(([id])=>allCats.find(c=>c.id===id)?.label??id);
   const data=entries.map(([,v])=>v);
-  const colors=entries.map(([id])=>allCats.find(c=>c.id===id)?.color??"#B0A898");
+  const baseColors=entries.map(([id])=>allCats.find(c=>c.id===id)?.color??"#B0A898");
+  // 若有篩選，非選中類別淡化
+  const colors=baseColors.map((c,i)=> !selectedCatFilter || ids[i]===selectedCatFilter ? c : c+"30");
+
   if(pieChart){pieChart.destroy();pieChart=null;}
-  pieChart=new Chart(document.getElementById("pieChart").getContext("2d"),{
+  const ctx=document.getElementById("pieChart").getContext("2d");
+  pieChart=new Chart(ctx,{
     type:"doughnut",
-    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
-    options:{cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>" NT$ "+ctx.raw.toLocaleString()},bodyColor:"#F0F2FF",backgroundColor:"rgba(13,13,20,.95)",borderColor:"rgba(0,229,255,.2)",borderWidth:1,padding:10}},animation:{duration:500},elements:{arc:{borderWidth:0}}}
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:8}]},
+    options:{
+      cutout:"62%",
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>" NT$ "+ctx.raw.toLocaleString()},bodyColor:"#F0F2FF",backgroundColor:"rgba(13,13,20,.95)",borderColor:"rgba(0,229,255,.2)",borderWidth:1,padding:10}
+      },
+      animation:{duration:400},
+      elements:{arc:{borderWidth:0}},
+      onClick:(evt,elements)=>{
+        if(elements.length>0){
+          const idx=elements[0].index;
+          selectCatFilter(ids[idx]);
+        }
+      },
+      onHover:(evt,elements)=>{
+        evt.native.target.style.cursor = elements.length>0 ? "pointer" : "default";
+      }
+    }
   });
+
   const leg=document.getElementById("chart-legend"); leg.innerHTML="";
   entries.forEach(([id,val])=>{
-    const cat=categories.find(c=>c.id===id);
-    const item=document.createElement("div"); item.className="legend-item";
+    const cat=allCats.find(c=>c.id===id);
+    const isDim = selectedCatFilter && id!==selectedCatFilter;
+    const item=document.createElement("div");
+    item.className="legend-item";
+    item.style.cssText="cursor:pointer;transition:opacity .15s;opacity:"+(isDim?"0.35":"1");
     item.innerHTML=`<div class="legend-dot" style="background:${cat?.color??"#B0A898"}"></div><span class="legend-name">${escHtml(cat?.label??id)}</span><span class="legend-val">${val.toLocaleString()}</span>`;
+    item.onclick=()=>selectCatFilter(id);
     leg.appendChild(item);
   });
 }
