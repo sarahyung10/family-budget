@@ -173,13 +173,13 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 .recur-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(168,85,247,.12);color:#A855F7;border:1px solid rgba(168,85,247,.25);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
 .pending-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.25);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
 /* 計算機鍵盤 */
-.calc-key{padding:18px 0;border:none;border-radius:14px;background:rgba(255,255,255,.05);color:#F0F2FF;font-family:'Inter',sans-serif;font-size:20px;font-weight:600;cursor:pointer;transition:all .12s}
-.calc-key:active{background:rgba(255,255,255,.12);transform:scale(.95)}
+.calc-key{padding:18px 0;border:none;border-radius:14px;background:rgba(255,255,255,.05);color:#F0F2FF;font-family:'Inter',sans-serif;font-size:20px;font-weight:600;cursor:pointer;transition:transform .08s ease-out,background-color .08s ease-out;-webkit-tap-highlight-color:transparent;touch-action:manipulation;will-change:transform}
+.calc-key.pressed{background:rgba(255,255,255,.16)!important;transform:scale(.92)!important;transition:transform .04s ease-out,background-color .04s ease-out}
 .calc-key.calc-fn{background:rgba(255,255,255,.03);color:#8A90B8;font-size:16px}
 .calc-key.calc-op{background:rgba(0,229,255,.08);color:var(--cyan);font-size:22px}
-.calc-key.calc-op:active{background:rgba(0,229,255,.18)}
+.calc-key.calc-op.pressed{background:rgba(0,229,255,.22)!important}
 .calc-key.calc-confirm{background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;font-size:16px;font-weight:700;box-shadow:0 0 16px rgba(124,58,237,.3)}
-.calc-key.calc-confirm:active{transform:scale(.95);opacity:.9}
+.calc-key.calc-confirm.pressed{opacity:.85;box-shadow:0 0 10px rgba(124,58,237,.4)!important}
 
 .inst-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .inst-btn.active{border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.1);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.15)}
@@ -1317,6 +1317,25 @@ function openCalculator(){
   const panel=document.getElementById("calc-panel");
   overlay.style.display="block"; panel.style.display="block";
   requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
+  initCalcKeyFeedback();
+}
+
+// 讓每顆按鍵在 touchstart 瞬間就有反應（零延遲），touchend/cancel 才移除
+let _calcFeedbackInit=false;
+function initCalcKeyFeedback(){
+  if(_calcFeedbackInit) return;
+  _calcFeedbackInit=true;
+  document.querySelectorAll(".calc-key").forEach(key=>{
+    const press=()=>{ key.classList.add("pressed"); if(navigator.vibrate) navigator.vibrate(1); };
+    const release=()=>key.classList.remove("pressed");
+    key.addEventListener("touchstart",press,{passive:true});
+    key.addEventListener("touchend",release,{passive:true});
+    key.addEventListener("touchcancel",release,{passive:true});
+    // 桌機測試用滑鼠事件
+    key.addEventListener("mousedown",press);
+    key.addEventListener("mouseup",release);
+    key.addEventListener("mouseleave",release);
+  });
 }
 
 function closeCalculator(apply){
