@@ -258,12 +258,27 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 
 <!-- 確認入帳彈窗（單筆，保留這個） -->
 <div id="confirm-overlay" onclick="closeConfirmModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;backdrop-filter:blur(6px)"></div>
-<div id="confirm-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);z-index:401;background:#13131C;border:1px solid rgba(0,229,255,.2);border-radius:20px;padding:24px 20px;width:300px;box-shadow:0 20px 60px rgba(0,0,0,.8);opacity:0;transition:all .22s ease">
+<div id="confirm-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);z-index:401;background:#13131C;border:1px solid rgba(0,229,255,.2);border-radius:20px;padding:24px 20px;width:320px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.8);opacity:0;transition:all .22s ease">
   <div style="font-size:14px;font-weight:700;color:#F0F2FF;margin-bottom:4px" id="confirm-title">確認入帳</div>
   <div style="font-size:11px;color:#6A7098;margin-bottom:16px" id="confirm-sub"></div>
-  <div style="font-size:11px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">確認金額（可修改）</div>
-  <input type="number" id="confirm-amount-input" inputmode="numeric"
-    style="width:100%;padding:12px 14px;border:1px solid rgba(0,229,255,.25);border-radius:10px;background:rgba(0,229,255,.04);font-family:inherit;font-size:22px;font-weight:700;color:#F0F2FF;margin-bottom:14px">
+
+  <!-- 單筆模式 -->
+  <div id="confirm-single-wrap">
+    <div style="font-size:11px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">確認金額（可修改）</div>
+    <input type="number" id="confirm-amount-input" inputmode="numeric"
+      style="width:100%;padding:12px 14px;border:1px solid rgba(0,229,255,.25);border-radius:10px;background:rgba(0,229,255,.04);font-family:inherit;font-size:22px;font-weight:700;color:#F0F2FF;margin-bottom:14px">
+  </div>
+
+  <!-- 拆分模式 -->
+  <div id="confirm-split-wrap" style="display:none">
+    <div style="font-size:11px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">各類別金額（可修改）</div>
+    <div id="confirm-split-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 4px;font-size:12px;color:var(--mid);margin-bottom:10px">
+      <span>總計</span>
+      <span id="confirm-split-total" style="font-weight:700;color:#F0F2FF">NT$0</span>
+    </div>
+  </div>
+
   <div style="display:flex;gap:8px">
     <button onclick="closeConfirmModal()" style="flex:1;padding:12px 0;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#6A7098;cursor:pointer">取消</button>
     <button onclick="confirmRecurEntry()" style="flex:2;padding:12px 0;background:linear-gradient(135deg,#7C3AED,#00B8D9);border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 0 16px rgba(124,58,237,.3)">確認入帳</button>
@@ -1253,6 +1268,20 @@ function saveRecurringPlan(baseRec, amount){
   });
 }
 
+function saveRecurringPlanSplit(baseRec, totalAmount, splits){
+  const planId="recur_"+Date.now();
+  db.ref("recurring/"+planId).set({
+    planId, recurN:fRecurN, recurUnit:fRecurUnit,
+    dayOfMonth:fRecurDay,
+    defaultAmount:totalAmount, note:baseRec.note,
+    isSplit:true,
+    defaultSplits: splits.map(s=>({category:s.category, sub:s.sub||"", amount:s.amount})),
+    category:splits[0].category, sub:splits[0].sub||"",
+    user:baseRec.user, payment:baseRec.payment||"cash", recordType:baseRec.type||"expense",
+    startDate:baseRec.date, active:true, lastGeneratedDate:""
+  });
+}
+
 // ── 檢查週期性計畫 ────────────────────────────────────
 function checkRecurringPlans(){
   db.ref("recurring").once("value", snap=>{
@@ -1301,17 +1330,24 @@ function renderPendingSection(pending){
   inner.innerHTML="";
   const allCats=[...categories,...incCategories];
   pending.forEach(plan=>{
+    const isSplitPlan = plan.isSplit && plan.defaultSplits && plan.defaultSplits.length>1;
     const cat=allCats.find(c=>c.id===plan.category)??{color:"#F59E0B",iconKey:"other",label:plan.category};
+    const catLabel = isSplitPlan
+      ? plan.defaultSplits.map(s=>allCats.find(c=>c.id===s.category)?.label??s.category).join("、")
+      : cat.label;
+    const iconHtml = isSplitPlan
+      ? `<div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--purple2),var(--cyan2));display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>`
+      : `<div style="width:40px;height:40px;border-radius:12px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getIcon(cat.iconKey||"other",17,cat.color)}</div>`;
     const row=document.createElement("div");
     row.style.cssText="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#1A140A;border:1px solid rgba(245,158,11,.2);border-radius:12px;margin-bottom:6px;cursor:pointer;transition:border-color .15s";
     row.onmouseenter=()=>row.style.borderColor="rgba(245,158,11,.5)";
     row.onmouseleave=()=>row.style.borderColor="rgba(245,158,11,.2)";
     row.onclick=()=>openConfirmModal(plan.planId);
     row.innerHTML=`
-      <div style="width:40px;height:40px;border-radius:12px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getIcon(cat.iconKey||"other",17,cat.color)}</div>
+      ${iconHtml}
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:#F0F2FF;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(plan.note)}</div>
-        <div style="font-size:10px;color:#8A6A30">${escHtml(cat.label)} · ${(()=>{const n=plan.recurN||1,u=plan.recurUnit||"月";return(n===1&&u==="月"?"每月":n===1&&u==="年"?"每年":`每${n}${u}`)+" "+plan.dayOfMonth+"號";})()}</div>
+        <div style="font-size:10px;color:#8A6A30">${escHtml(catLabel)} · ${(()=>{const n=plan.recurN||1,u=plan.recurUnit||"月";return(n===1&&u==="月"?"每月":n===1&&u==="年"?"每年":`每${n}${u}`)+" "+plan.dayOfMonth+"號";})()}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:14px;font-weight:700;color:#F0F2FF">NT$${(plan.defaultAmount||0).toLocaleString()}</div>
@@ -1326,12 +1362,59 @@ function openConfirmModal(planId){
   confirmingPlan=plan;
   document.getElementById("confirm-title").textContent=escHtml(plan.note);
   document.getElementById("confirm-sub").textContent=(()=>{const n=plan.recurN||1,u=plan.recurUnit||"月";return(n===1&&u==="月"?"每月":n===1&&u==="年"?"每年":`每${n}${u}`)+" "+plan.dayOfMonth+"號 · 週期性帳款";})();
-  document.getElementById("confirm-amount-input").value=plan.defaultAmount||"";
+
+  const singleWrap=document.getElementById("confirm-single-wrap");
+  const splitWrap=document.getElementById("confirm-split-wrap");
+
+  if(plan.isSplit && plan.defaultSplits && plan.defaultSplits.length>0){
+    singleWrap.style.display="none";
+    splitWrap.style.display="block";
+    renderConfirmSplitRows(plan.defaultSplits);
+  } else {
+    singleWrap.style.display="block";
+    splitWrap.style.display="none";
+    document.getElementById("confirm-amount-input").value=plan.defaultAmount||"";
+  }
+
   const overlay=document.getElementById("confirm-overlay"), modal=document.getElementById("confirm-modal");
   overlay.style.display="block"; modal.style.display="block";
   requestAnimationFrame(()=>{ modal.style.transform="translate(-50%,-50%) scale(1)"; modal.style.opacity="1"; });
-  setTimeout(()=>document.getElementById("confirm-amount-input").select(),280);
+  if(!plan.isSplit) setTimeout(()=>document.getElementById("confirm-amount-input").select(),280);
 }
+
+// 目前確認彈窗中的拆分金額（可編輯）
+let confirmSplitValues=[];
+
+function renderConfirmSplitRows(splits){
+  confirmSplitValues = splits.map(s=>({ category:s.category, sub:s.sub||"", amount:s.amount }));
+  const allCats=[...categories,...incCategories];
+  const el=document.getElementById("confirm-split-rows");
+  el.innerHTML="";
+  splits.forEach((s,i)=>{
+    const cat=allCats.find(c=>c.id===s.category);
+    const row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px";
+    row.innerHTML=`
+      <div style="width:28px;height:28px;border-radius:8px;background:${cat?cat.color:"#8B5CF6"}22;display:flex;align-items:center;justify-content:center;flex-shrink:0">${cat?getIcon(cat.iconKey||"other",13,cat.color):""}</div>
+      <div style="flex:1;font-size:12px;color:${cat?cat.color:"var(--mid)"};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat?escHtml(cat.label):s.category}${s.sub?" · "+escHtml(s.sub):""}</div>
+      <input type="number" value="${s.amount}" inputmode="decimal"
+        style="width:80px;padding:6px 8px;border:1px solid rgba(0,229,255,.2);border-radius:8px;background:rgba(0,229,255,.04);color:#F0F2FF;font-family:inherit;font-size:14px;font-weight:700;text-align:right"
+        oninput="updateConfirmSplitValue(${i}, this.value)">`;
+    el.appendChild(row);
+  });
+  updateConfirmSplitTotal();
+}
+
+function updateConfirmSplitValue(idx, val){
+  confirmSplitValues[idx].amount = parseFloat(val)||0;
+  updateConfirmSplitTotal();
+}
+
+function updateConfirmSplitTotal(){
+  const total=confirmSplitValues.reduce((s,r)=>s+(r.amount||0),0);
+  document.getElementById("confirm-split-total").textContent="NT$"+total.toLocaleString();
+}
+
 function closeConfirmModal(){
   const modal=document.getElementById("confirm-modal"), overlay=document.getElementById("confirm-overlay");
   modal.style.transform="translate(-50%,-50%) scale(.92)"; modal.style.opacity="0";
@@ -1341,12 +1424,32 @@ function closeConfirmModal(){
 async function confirmRecurEntry(){
   if(!confirmingPlan) return;
   const plan=confirmingPlan;
-  const amount=parseFloat(document.getElementById("confirm-amount-input").value);
-  if(!amount||isNaN(amount)) return;
   const todayStr=new Date().toISOString().slice(0,10);
-  const rec={user:plan.user,category:plan.category,sub:plan.sub||"",amount,note:plan.note,date:todayStr,payment:plan.payment||"cash",type:plan.recordType||"expense",recurPlanId:plan.planId,timestamp:Date.now()};
-  await db.ref("records").push(rec);
-  await db.ref("recurring/"+plan.planId).update({lastGeneratedDate:todayStr,defaultAmount:amount});
+
+  if(plan.isSplit){
+    const validSplits=confirmSplitValues.filter(s=>s.amount>0);
+    if(validSplits.length===0) return;
+    const totalAmount=validSplits.reduce((s,r)=>s+r.amount,0);
+    const rec={
+      user:plan.user, splits:validSplits, amount:totalAmount,
+      category:validSplits[0].category, sub:validSplits[0].sub||"",
+      note:plan.note, date:todayStr, payment:plan.payment||"cash",
+      type:plan.recordType||"expense", recurPlanId:plan.planId, timestamp:Date.now()
+    };
+    await db.ref("records").push(rec);
+    await db.ref("recurring/"+plan.planId).update({
+      lastGeneratedDate:todayStr,
+      defaultAmount:totalAmount,
+      defaultSplits:validSplits
+    });
+  } else {
+    const amount=parseFloat(document.getElementById("confirm-amount-input").value);
+    if(!amount||isNaN(amount)) return;
+    const rec={user:plan.user,category:plan.category,sub:plan.sub||"",amount,note:plan.note,date:todayStr,payment:plan.payment||"cash",type:plan.recordType||"expense",recurPlanId:plan.planId,timestamp:Date.now()};
+    await db.ref("records").push(rec);
+    await db.ref("recurring/"+plan.planId).update({lastGeneratedDate:todayStr,defaultAmount:amount});
+  }
+
   closeConfirmModal();
   window._recurPending=(window._recurPending||[]).filter(p=>p.planId!==plan.planId);
   renderPendingSection(window._recurPending);
@@ -1625,7 +1728,7 @@ function saveRecord(){
     if(validSplits.length===0){ return; }
     const totalAmount = validSplits.reduce((s,r)=>s+r.amount,0);
 
-    const rec={
+    const baseRec={
       user:fUser, splits:validSplits, amount:totalAmount,
       category:validSplits[0].category, sub:validSplits[0].sub, // 供舊邏輯相容（單一分類欄位取第一筆）
       note:document.getElementById("inp-note").value.trim()||"－",
@@ -1636,13 +1739,43 @@ function saveRecord(){
     const btn=document.getElementById("btn-save");
     btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
 
-    if(editingKey){
+    // 週期性（拆分版）：建立計畫，splits 存比例
+    if(fRecur && fPayment==="card" && !editingKey){
+      saveRecurringPlanSplit(baseRec, totalAmount, validSplits);
+      const firstRec={...baseRec, recurPlanId:"first"};
+      records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
+      db.ref("records").push(firstRec);
+    }
+    // 分期（拆分版）：每期依相同比例分配 splits
+    else if(fInstall && fPayment==="card" && fInstMonths>=2 && !editingKey){
+      const planId = "inst_"+Date.now();
+      const perMonthTotal = Math.ceil(totalAmount/fInstMonths);
+      const ratio = validSplits.map(s=>s.amount/totalAmount);
+      const perMonthSplits = validSplits.map((s,i)=>({
+        category:s.category, sub:s.sub,
+        amount: Math.round(perMonthTotal*ratio[i]*100)/100
+      }));
+      const startDate=baseRec.date;
+      const plan = {
+        planId, totalMonths:fInstMonths, dayOfMonth:parseInt(fInstDay),
+        perMonth:perMonthTotal, totalAmount,
+        note:baseRec.note, splitRatio:validSplits.map(s=>({category:s.category,sub:s.sub,ratio:s.amount/totalAmount})),
+        user:fUser, type:fType, startDate,
+        generatedUpTo:0
+      };
+      db.ref("installments/"+planId).set(plan);
+      const firstRec={...baseRec, amount:perMonthTotal, splits:perMonthSplits, installPlanId:planId, installIndex:1, installTotal:fInstMonths, date:startDate};
+      records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
+      db.ref("records").push(firstRec);
+      db.ref("installments/"+planId).update({generatedUpTo:1});
+    }
+    else if(editingKey){
       const idx=records.findIndex(r=>r._key===editingKey);
-      if(idx>-1) records[idx]={...records[idx],...rec};
-      db.ref("records/"+editingKey).update(rec);
+      if(idx>-1) records[idx]={...records[idx],...baseRec};
+      db.ref("records/"+editingKey).update(baseRec);
     } else {
-      records.unshift({_key:"_tmp_"+Date.now(),...rec});
-      db.ref("records").push(rec);
+      records.unshift({_key:"_tmp_"+Date.now(),...baseRec});
+      db.ref("records").push(baseRec);
     }
 
     updateLastHeader(fUser);
@@ -1738,6 +1871,13 @@ function checkInstallmentPlans(){
           installPlanId: planId, installIndex: i, installTotal: plan.totalMonths,
           timestamp: d.getTime()
         };
+        // 若是拆分計畫，依比例產生 splits
+        if(plan.splitRatio && plan.splitRatio.length>0){
+          rec.splits = plan.splitRatio.map(s=>({
+            category:s.category, sub:s.sub||"",
+            amount: Math.round(plan.perMonth*s.ratio*100)/100
+          }));
+        }
         db.ref("records").push(rec);
       }
       db.ref("installments/"+planId).update({generatedUpTo: shouldHave});
