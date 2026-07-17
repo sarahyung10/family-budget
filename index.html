@@ -181,6 +181,13 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 .calc-key.calc-confirm{background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;font-size:16px;font-weight:700;box-shadow:0 0 16px rgba(124,58,237,.3)}
 .calc-key.calc-confirm.pressed{opacity:.85;box-shadow:0 0 10px rgba(124,58,237,.4)!important}
 
+/* 拆分項目列 */
+.split-row{display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:8px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.split-row-main{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.split-cat-select{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);cursor:pointer;font-size:12px;color:var(--mid)}
+.split-amount-input{width:88px;flex-shrink:0;padding:8px 10px!important;font-size:16px!important;font-weight:700!important;text-align:right}
+.split-del-btn{width:28px;height:28px;flex-shrink:0;border-radius:8px;border:none;background:rgba(244,63,94,.1);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer}
+
 .inst-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .inst-btn.active{border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.1);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.15)}
 /* 分期標籤（明細列） */
@@ -293,6 +300,14 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
     <button class="calc-key" onclick="calcNum('0')" style="grid-column:span 2">0</button>
     <button class="calc-key" onclick="calcNum('.')">.</button>
   </div>
+</div>
+
+<!-- 拆分列用的類別選擇彈窗 -->
+<div id="split-cat-overlay" onclick="closeSplitCatPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;backdrop-filter:blur(6px)"></div>
+<div id="split-cat-picker" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:501;background:#13131C;border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);max-height:70vh;overflow-y:auto">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
+  <div style="font-size:12px;font-weight:600;color:var(--light);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">選擇類別</div>
+  <div id="split-cat-picker-chips" class="chips"></div>
 </div>
 
 <div id="main">
@@ -454,24 +469,56 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       </div>
     </div>
 
-    <!-- 類別 -->
+    <!-- 拆分金額開關 -->
     <div class="field">
       <div class="field-label">
-        <span>類別</span>
-        <span class="field-link" onclick="openNewCat()">+ 新增類別</span>
+        <span>多類別拆分</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <span style="font-size:10px;color:var(--mid);font-weight:500;letter-spacing:.5px" id="split-toggle-label">關閉</span>
+          <div id="split-toggle" onclick="toggleSplitMode()" style="width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid var(--border);position:relative;cursor:pointer;transition:all .2s">
+            <div id="split-knob" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#6A7098;transition:all .2s"></div>
+          </div>
+        </label>
       </div>
-      <div class="chips" id="cat-chips"></div>
+      <div style="font-size:10px;color:#5A6080;line-height:1.5">同一筆消費包含不同類別的商品時開啟，可分別記錄各類別的金額</div>
     </div>
-    <div class="field">
-      <div class="field-label">
-        <span>子類別</span>
-        <span class="field-link" onclick="openManageSubs()">管理子類別</span>
+
+    <!-- 單一類別模式 -->
+    <div id="single-cat-mode">
+      <!-- 類別 -->
+      <div class="field">
+        <div class="field-label">
+          <span>類別</span>
+          <span class="field-link" onclick="openNewCat()">+ 新增類別</span>
+        </div>
+        <div class="chips" id="cat-chips"></div>
       </div>
-      <div class="chips" id="sub-chips"></div>
+      <div class="field">
+        <div class="field-label">
+          <span>子類別</span>
+          <span class="field-link" onclick="openManageSubs()">管理子類別</span>
+        </div>
+        <div class="chips" id="sub-chips"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">金額（NT$）</div>
+        <input type="text" id="inp-amount" placeholder="0" readonly onclick="openCalculator()" style="cursor:pointer">
+      </div>
     </div>
-    <div class="field">
-      <div class="field-label">金額（NT$）</div>
-      <input type="text" id="inp-amount" placeholder="0" readonly onclick="openCalculator()" style="cursor:pointer">
+
+    <!-- 拆分模式 -->
+    <div id="split-cat-mode" style="display:none">
+      <div class="field">
+        <div class="field-label">
+          <span>類別拆分</span>
+          <span class="field-link" onclick="addSplitRow()">+ 新增項目</span>
+        </div>
+        <div id="split-rows"></div>
+        <div id="split-total-bar" style="margin-top:10px;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.02);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--mid)">已分配 / 總金額</span>
+          <span id="split-total-display" style="font-size:14px;font-weight:700;color:var(--dark)">NT$0 / 0</span>
+        </div>
+      </div>
     </div>
     <div class="field">
       <div class="field-label">備註</div>
@@ -899,6 +946,10 @@ function resetForm(){
   document.getElementById("btn-save").textContent="記　錄";
   document.getElementById("btn-save").className="btn-save";
   updateIdentityBadge();
+  // 重置拆分模式
+  isSplitMode=false;
+  splitRows=[];
+  updateSplitToggleUI();
   renderFormUI();
 }
 function setType(t){
@@ -1307,6 +1358,143 @@ let calcTokens=[];      // 例如 ["120","+","30"]
 let calcCurrent="0";    // 目前正在輸入的數字
 let calcResultShown=false;
 
+// ── 多類別拆分 ────────────────────────────────────────
+let isSplitMode = false;
+let splitRows = []; // [{id, category, sub, amount}]
+let splitPickingRowId = null;
+
+function toggleSplitMode(){
+  isSplitMode = !isSplitMode;
+  updateSplitToggleUI();
+}
+
+function updateSplitToggleUI(){
+  const tog=document.getElementById("split-toggle");
+  const knob=document.getElementById("split-knob");
+  const lbl=document.getElementById("split-toggle-label");
+  const singleMode=document.getElementById("single-cat-mode");
+  const splitModeEl=document.getElementById("split-cat-mode");
+  if(!tog) return;
+  if(isSplitMode){
+    tog.style.background="rgba(168,85,247,.3)"; tog.style.borderColor="rgba(168,85,247,.4)";
+    knob.style.left="18px"; knob.style.background="#A855F7";
+    lbl.textContent="開啟"; lbl.style.color="#A855F7";
+    singleMode.style.display="none";
+    splitModeEl.style.display="block";
+    if(splitRows.length===0){
+      // 帶入目前單一類別作為第一項
+      const cats=fType==="income"?incCategories:categories;
+      const defaultCat=cats.find(c=>c.id===fCategory)?.id ?? (cats[0]?.id ?? "");
+      addSplitRow(defaultCat, fSub, document.getElementById("inp-amount").value || "");
+    }
+  } else {
+    tog.style.background="rgba(255,255,255,.1)"; tog.style.borderColor="rgba(255,255,255,.08)";
+    knob.style.left="2px"; knob.style.background="#6A7098";
+    lbl.textContent="關閉"; lbl.style.color="var(--mid)";
+    singleMode.style.display="block";
+    splitModeEl.style.display="none";
+  }
+}
+
+function addSplitRow(presetCat, presetSub, presetAmount){
+  const cats=fType==="income"?incCategories:categories;
+  const id="split_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+  const catId = presetCat || (cats[0]?.id ?? "");
+  splitRows.push({ id, category:catId, sub:presetSub||"", amount:presetAmount||"" });
+  renderSplitRows();
+}
+
+function removeSplitRow(id){
+  splitRows = splitRows.filter(r=>r.id!==id);
+  if(splitRows.length===0) addSplitRow();
+  else renderSplitRows();
+}
+
+function updateSplitAmount(id, val){
+  const row=splitRows.find(r=>r.id===id);
+  if(row) row.amount=val;
+  updateSplitTotalDisplay();
+}
+
+function renderSplitRows(){
+  const el=document.getElementById("split-rows");
+  if(!el) return;
+  el.innerHTML="";
+  const allCats=fType==="income"?incCategories:categories;
+
+  splitRows.forEach(row=>{
+    const cat=allCats.find(c=>c.id===row.category);
+    const wrap=document.createElement("div");
+    wrap.className="split-row";
+    wrap.innerHTML=`
+      <div class="split-row-main">
+        <div class="split-cat-select" onclick="openSplitCatPicker('${row.id}')">
+          <span style="display:inline-flex;flex-shrink:0">${cat?getIcon(cat.iconKey||"other",13,cat.color):""}</span>
+          <span style="color:${cat?cat.color:"var(--mid)"};font-weight:600">${cat?escHtml(cat.label):"選擇類別"}</span>
+          ${row.sub?`<span style="opacity:.6">· ${escHtml(row.sub)}</span>`:""}
+        </div>
+      </div>
+      <input type="text" class="split-amount-input" placeholder="0" value="${row.amount||""}"
+        oninput="updateSplitAmount('${row.id}', this.value.replace(/[^0-9.]/g,''))"
+        inputmode="decimal" style="border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.03);color:var(--dark);font-family:inherit">
+      <button class="split-del-btn" onclick="removeSplitRow('${row.id}')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    el.appendChild(wrap);
+  });
+  updateSplitTotalDisplay();
+}
+
+function updateSplitTotalDisplay(){
+  const totalEl=document.getElementById("split-total-display");
+  const barEl=document.getElementById("split-total-bar");
+  if(!totalEl) return;
+  const allocated=splitRows.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  const targetAmount=parseFloat(document.getElementById("inp-amount").value)||0;
+  totalEl.textContent = `NT$${Math.round(allocated).toLocaleString()} / ${targetAmount?targetAmount.toLocaleString():"未設定"}`;
+  if(targetAmount>0){
+    const diff=Math.abs(allocated-targetAmount);
+    if(diff<0.01){ barEl.style.borderColor="rgba(16,185,129,.4)"; totalEl.style.color="#10B981"; }
+    else { barEl.style.borderColor="rgba(245,158,11,.4)"; totalEl.style.color="#F59E0B"; }
+  } else {
+    barEl.style.borderColor="var(--border)"; totalEl.style.color="var(--dark)";
+  }
+}
+
+// ── 拆分列的類別選擇彈窗 ──────────────────────────────
+function openSplitCatPicker(rowId){
+  splitPickingRowId=rowId;
+  const allCats=fType==="income"?incCategories:categories;
+  const chipsEl=document.getElementById("split-cat-picker-chips");
+  chipsEl.innerHTML="";
+  allCats.forEach(cat=>{
+    const btn=document.createElement("button");
+    btn.className="chip";
+    btn.style.cssText="padding:8px 14px;border-radius:20px;border:1.5px solid "+cat.color+"55;background:"+cat.color+"18;color:"+cat.color+";font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0 6px 8px 0";
+    btn.innerHTML=`${getIcon(cat.iconKey||"other",14,cat.color)} ${escHtml(cat.label)}`;
+    btn.onclick=()=>selectSplitCat(cat.id);
+    chipsEl.appendChild(btn);
+  });
+  const overlay=document.getElementById("split-cat-overlay");
+  const panel=document.getElementById("split-cat-picker");
+  overlay.style.display="block"; panel.style.display="block";
+  requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
+}
+
+function selectSplitCat(catId){
+  const row=splitRows.find(r=>r.id===splitPickingRowId);
+  if(row){ row.category=catId; row.sub=""; }
+  closeSplitCatPicker();
+  renderSplitRows();
+}
+
+function closeSplitCatPicker(){
+  const panel=document.getElementById("split-cat-picker");
+  const overlay=document.getElementById("split-cat-overlay");
+  panel.style.transform="translateY(100%)";
+  setTimeout(()=>{ panel.style.display="none"; overlay.style.display="none"; },260);
+}
+
 function openCalculator(){
   const existing=document.getElementById("inp-amount").value;
   calcTokens=[];
@@ -1347,6 +1535,7 @@ function closeCalculator(apply){
     const val=calcEvaluate();
     document.getElementById("inp-amount").value = val || "";
     if(typeof fInstall!=="undefined" && fInstall) updateInstPreview();
+    if(typeof isSplitMode!=="undefined" && isSplitMode) updateSplitTotalDisplay();
   }
 }
 
@@ -1429,7 +1618,39 @@ function calcEnterOrApply(){
 
 function saveRecord(){
 
+  // ── 拆分模式 ──
+  if(isSplitMode){
+    const validSplits = splitRows.filter(r=>r.category && parseFloat(r.amount)>0)
+      .map(r=>({ category:r.category, sub:r.sub||"", amount:parseFloat(r.amount) }));
+    if(validSplits.length===0){ return; }
+    const totalAmount = validSplits.reduce((s,r)=>s+r.amount,0);
 
+    const rec={
+      user:fUser, splits:validSplits, amount:totalAmount,
+      category:validSplits[0].category, sub:validSplits[0].sub, // 供舊邏輯相容（單一分類欄位取第一筆）
+      note:document.getElementById("inp-note").value.trim()||"－",
+      date:document.getElementById("inp-date").value||today(),
+      payment:fPayment, type:fType, timestamp:Date.now()
+    };
+
+    const btn=document.getElementById("btn-save");
+    btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
+
+    if(editingKey){
+      const idx=records.findIndex(r=>r._key===editingKey);
+      if(idx>-1) records[idx]={...records[idx],...rec};
+      db.ref("records/"+editingKey).update(rec);
+    } else {
+      records.unshift({_key:"_tmp_"+Date.now(),...rec});
+      db.ref("records").push(rec);
+    }
+
+    updateLastHeader(fUser);
+    setTimeout(()=>{ resetForm(); showView("dashboard"); refreshAll(); },600);
+    return;
+  }
+
+  // ── 單一類別模式 ──
   const amount=parseFloat(document.getElementById("inp-amount").value);
   if(!amount||isNaN(amount)){document.getElementById("inp-amount").focus();return;}
 
@@ -1536,6 +1757,18 @@ function startEdit(r){
   document.getElementById("form-title").textContent="編輯記錄";
   document.getElementById("btn-save").textContent="更　新";
   document.getElementById("btn-save").className="btn-save";
+
+  // 若是拆分記錄，還原拆分模式
+  if(r.splits && r.splits.length>1){
+    isSplitMode=true;
+    splitRows = r.splits.map((s,i)=>({ id:"split_edit_"+i+"_"+Date.now(), category:s.category, sub:s.sub||"", amount:String(s.amount) }));
+  } else {
+    isSplitMode=false;
+    splitRows=[];
+  }
+  updateSplitToggleUI();
+  if(isSplitMode) renderSplitRows();
+
   renderFormUI(); showView("add");
 }
 function deleteRecord(key){
@@ -1681,7 +1914,11 @@ function refreshAll(){
   const tabF=f.filter(r=>(dashTab==="income"?r.type==="income":r.type!=="income"));
   renderPie(tabF);
   // 類別篩選（若有選取）套用到明細
-  const recordsF = selectedCatFilter ? tabF.filter(r=>r.category===selectedCatFilter) : tabF;
+  const recordsF = selectedCatFilter ? tabF.filter(r=>
+    r.splits && r.splits.length>0
+      ? r.splits.some(s=>s.category===selectedCatFilter)
+      : r.category===selectedCatFilter
+  ) : tabF;
   renderRecords(recordsF);
   renderFilterBadge();
 }
@@ -1722,7 +1959,14 @@ function renderPie(f){
   cc.style.display="block";ce.style.display="none";
   const allCats=[...categories,...incCategories];
   const map={};
-  f.forEach(r=>{map[r.category]=(map[r.category]||0)+(r.amount||0);});
+  f.forEach(r=>{
+    if(r.splits && r.splits.length>0){
+      // 拆分記錄：每個 split 分別計入對應類別
+      r.splits.forEach(s=>{ map[s.category]=(map[s.category]||0)+(s.amount||0); });
+    } else {
+      map[r.category]=(map[r.category]||0)+(r.amount||0);
+    }
+  });
   const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
   const ids=entries.map(([id])=>id);
   const labels=entries.map(([id])=>allCats.find(c=>c.id===id)?.label??id);
@@ -1771,7 +2015,13 @@ function renderPie(f){
 
 function renderRecords(f){
   const el=document.getElementById("records-inner"); el.innerHTML="";
-  const sorted=[...f].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const sorted=[...f].sort((a,b)=>{
+    // 先比日期
+    const dateDiff=new Date(b.date)-new Date(a.date);
+    if(dateDiff!==0) return dateDiff;
+    // 同一天：用 timestamp 排序（新到舊），沒有 timestamp 的排最後
+    return (b.timestamp||0)-(a.timestamp||0);
+  });
   if(sorted.length===0){el.innerHTML='<div class="empty">無記錄</div>';return;}
 
   // 依日期分組
@@ -1844,18 +2094,27 @@ function renderRecords(f){
         ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>`
         : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A6080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`;
 
+      const isSplit = r.splits && r.splits.length>1;
+      const iconHtml = isSplit
+        ? `<div class="rec-icon" style="background:linear-gradient(135deg,var(--purple2),var(--cyan2))"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>`
+        : `<div class="rec-icon" style="background:${cat.color}">${getIcon(cat.iconKey||"other",18,"#fff")}</div>`;
+      const catLabelHtml = isSplit
+        ? r.splits.map(s=>allCats.find(c=>c.id===s.category)?.label??s.category).join("、")
+        : `${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}`;
+
       const inner=document.createElement("div");
       inner.className="swipe-inner";
       // 同一天多筆時，非最後一筆加細分隔線
       if(!isLast) inner.style.borderBottom="1px solid rgba(255,255,255,.04)";
       inner.innerHTML=`
-        <div class="rec-icon" style="background:${cat.color}">${getIcon(cat.iconKey||"other",18,"#fff")}</div>
+        ${iconHtml}
         <div class="rec-info">
-          <div class="rec-cat">${escHtml(cat.label)}${r.sub?" · "+escHtml(r.sub):""}</div>
+          <div class="rec-cat">${catLabelHtml}</div>
           <div class="rec-note-small">${escHtml(r.note==="－"?"":r.note)}</div>
           <div class="rec-meta">${payIcon}</div>
         </div>
         <div class="rec-user" style="background:${user.color}18;color:${user.color}">${user.label}</div>
+        ${isSplit?`<div class="recur-badge" style="background:rgba(168,85,247,.12);color:#A855F7;border-color:rgba(168,85,247,.25)">拆分</div>`:""}
         ${r.installIndex?`<div class="inst-badge">${r.installIndex}／${r.installTotal}</div>`:""}
         ${r.recurPlanId&&!r.installIndex?`<div class="recur-badge">週期</div>`:""}
         <div class="rec-amount${isIncome?" income":""}">${isIncome?"+":""}${(r.amount||0).toLocaleString()}</div>`;
