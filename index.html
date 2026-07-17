@@ -182,11 +182,12 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 .calc-key.calc-confirm.pressed{opacity:.85;box-shadow:0 0 10px rgba(124,58,237,.4)!important}
 
 /* 拆分項目列 */
-.split-row{display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:8px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--radius-sm)}
-.split-row-main{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
-.split-cat-select{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);cursor:pointer;font-size:12px;color:var(--mid)}
-.split-amount-input{width:88px;flex-shrink:0;padding:8px 10px!important;font-size:16px!important;font-weight:700!important;text-align:right}
-.split-del-btn{width:28px;height:28px;flex-shrink:0;border-radius:8px;border:none;background:rgba(244,63,94,.1);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.split-row{display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:8px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--radius-sm);max-width:100%;overflow:hidden;box-sizing:border-box}
+.split-row-main{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+.split-cat-select{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);cursor:pointer;font-size:12px;color:var(--mid);min-width:0;overflow:hidden}
+.split-cat-select span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.split-amount-input{width:72px;max-width:72px;flex-shrink:0;padding:8px 8px!important;font-size:15px!important;font-weight:700!important;text-align:right;box-sizing:border-box}
+.split-del-btn{width:26px;height:26px;flex-shrink:0;border-radius:8px;border:none;background:rgba(244,63,94,.1);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 .inst-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .inst-btn.active{border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.1);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.15)}
@@ -522,7 +523,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
     </div>
 
     <!-- 拆分模式 -->
-    <div id="split-cat-mode" style="display:none">
+    <div id="split-cat-mode" style="display:none;max-width:100%;overflow:hidden">
       <div class="field">
         <div class="field-label">
           <span>類別拆分</span>
@@ -1533,8 +1534,7 @@ function renderSplitRows(){
       <div class="split-row-main">
         <div class="split-cat-select" onclick="openSplitCatPicker('${row.id}')">
           <span style="display:inline-flex;flex-shrink:0">${cat?getIcon(cat.iconKey||"other",13,cat.color):""}</span>
-          <span style="color:${cat?cat.color:"var(--mid)"};font-weight:600">${cat?escHtml(cat.label):"選擇類別"}</span>
-          ${row.sub?`<span style="opacity:.6">· ${escHtml(row.sub)}</span>`:""}
+          <span style="color:${cat?cat.color:"var(--mid)"};font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat?escHtml(cat.label):"選擇類別"}${row.sub?" · "+escHtml(row.sub):""}</span>
         </div>
       </div>
       <input type="text" class="split-amount-input" placeholder="0" value="${row.amount||""}"
