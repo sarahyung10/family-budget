@@ -46,7 +46,7 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 ::-webkit-scrollbar{width:2px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 
-#header{background:rgba(10,10,15,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:var(--dark);padding-left:20px;padding-right:20px;padding-bottom:14px;padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 20px));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);width:100%}
+#header{background:#0A0A0F;background-image:linear-gradient(rgba(10,10,15,.88),rgba(10,10,15,.88));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:var(--dark);padding-left:20px;padding-right:20px;padding-bottom:14px;padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 20px));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);width:100%;isolation:isolate}
 .header-title{font-size:20px;font-weight:700}
 .header-last{font-size:10px;color:var(--light);margin-top:3px;letter-spacing:.3px}
 .month-nav{display:flex;align-items:center;background:rgba(255,255,255,.05);border-radius:20px;padding:3px 6px;border:1px solid var(--border)}
@@ -186,7 +186,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 .split-row-main{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
 .split-cat-select{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);cursor:pointer;font-size:12px;color:var(--mid);min-width:0;overflow:hidden}
 .split-cat-select span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.split-amount-input{width:72px;max-width:72px;flex-shrink:0;padding:8px 8px!important;font-size:15px!important;font-weight:700!important;text-align:right;box-sizing:border-box}
+.split-amount-input{width:72px!important;max-width:72px!important;flex-shrink:0;padding:8px 8px!important;font-size:15px!important;font-weight:700!important;text-align:right;box-sizing:border-box}
 .split-del-btn{width:26px;height:26px;flex-shrink:0;border-radius:8px;border:none;background:rgba(244,63,94,.1);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 .inst-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
