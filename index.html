@@ -319,8 +319,8 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 </div>
 
 <!-- 拆分列用的類別選擇彈窗 -->
-<div id="split-cat-overlay" onclick="closeSplitCatPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;backdrop-filter:blur(6px)"></div>
-<div id="split-cat-picker" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:501;background:#13131C;border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);max-height:70vh;overflow-y:auto">
+<div id="split-cat-overlay" onclick="closeSplitCatPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;backdrop-filter:blur(6px)"></div>
+<div id="split-cat-picker" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:601;background:#13131C;border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);max-height:70vh;overflow-y:auto">
   <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
   <div style="font-size:12px;font-weight:600;color:var(--light);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">選擇類別</div>
   <div id="split-cat-picker-chips" class="chips"></div>
@@ -1011,16 +1011,12 @@ let fInstDay = 1;       // 每月扣款日
 function setPayment(p){
   fPayment=p;
   renderPaymentBtns();
-  // 只有刷卡才顯示分期和週期性欄位
+  // 分期只有刷卡才有；週期性所有付款方式都可以
   const instField=document.getElementById("installment-field");
   const recurField=document.getElementById("recurring-field");
   if(instField) instField.style.display=p==="card"?"block":"none";
-  if(recurField) recurField.style.display=p==="card"?"block":"none";
-  if(p==="cash"){ fInstall=false; fRecur=false; updateInstallToggleUI(); updateRecurToggleUI();
-  // 清除滾輪讓下次重建
-  ["recur-n-scroll","recur-unit-scroll","recur-day-scroll"].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.innerHTML="";
-  }); }
+  if(recurField) recurField.style.display="block";
+  if(p!=="card"){ fInstall=false; updateInstallToggleUI(); }
 }
 
 function toggleInstallment(){
@@ -1740,7 +1736,7 @@ function saveRecord(){
     btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
 
     // 週期性（拆分版）：建立計畫，splits 存比例
-    if(fRecur && fPayment==="card" && !editingKey){
+    if(fRecur && !editingKey){
       saveRecurringPlanSplit(baseRec, totalAmount, validSplits);
       const firstRec={...baseRec, recurPlanId:"first"};
       records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
@@ -1793,7 +1789,7 @@ function saveRecord(){
   btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
 
   // 週期性：建立計畫，並立即觸發本次入帳確認
-  if(fRecur && fPayment==="card" && !editingKey){
+  if(fRecur && !editingKey){
     saveRecurringPlan(baseRec, amount);
     // 立即產生一筆今天的記錄（第一次）
     const firstRec={...baseRec, recurPlanId:"first"};
@@ -1936,9 +1932,49 @@ function renderSubTags(cat){
     const tag=document.createElement("div");
     tag.className="sub-tag";
     tag.style.background=cat.color+"18"; tag.style.border="1px solid "+cat.color+"55";
-    tag.innerHTML=`<span style="color:#3D3530">${escHtml(s)}</span><button class="sub-tag-del" onclick="deleteSub('${escHtml(s)}')">×</button>`;
+    tag.innerHTML=`<span style="color:#3D3530">${escHtml(s)}</span>
+      <button class="sub-tag-edit" onclick="startEditSub('${escHtml(s)}', this)" style="background:none;border:none;cursor:pointer;color:${cat.color};opacity:.7;padding:0;display:inline-flex;align-items:center;margin-left:2px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="sub-tag-del" onclick="deleteSub('${escHtml(s)}')">×</button>`;
+    tag.dataset.subName=s;
     el.appendChild(tag);
   });
+}
+
+// ── 子類別行內編輯 ────────────────────────────────────
+function startEditSub(oldName, btnEl){
+  const tag=btnEl.closest(".sub-tag");
+  const cat = (fType==="income"?incCategories:categories).find(c=>c.id===fCategory);
+  if(!cat) return;
+  tag.innerHTML=`
+    <input type="text" value="${escHtml(oldName)}"
+      style="width:80px;padding:3px 6px;border:1px solid ${cat.color}77;border-radius:6px;background:rgba(255,255,255,.05);color:#F0F2FF;font-family:inherit;font-size:12px"
+      onkeydown="if(event.key==='Enter')confirmEditSub('${escHtml(oldName)}',this.value,this);if(event.key==='Escape')renderSubTags(window._editingSubCat)"
+      id="edit-sub-input">
+    <button onclick="confirmEditSub('${escHtml(oldName)}', document.getElementById('edit-sub-input').value, this)"
+      style="background:none;border:none;cursor:pointer;color:${cat.color};padding:0;display:inline-flex;margin-left:2px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </button>`;
+  window._editingSubCat = cat;
+  const input=document.getElementById("edit-sub-input");
+  input.focus(); input.select();
+}
+
+function confirmEditSub(oldName, newNameRaw, el){
+  const newName=(newNameRaw||"").trim();
+  const dbPath=fType==="income"?"inc_categories":"categories";
+  const cats=fType==="income"?incCategories:categories;
+  const cat=cats.find(c=>c.id===fCategory);
+  if(!cat) return;
+  if(!newName || newName===oldName){ renderSubTags(cat); return; }
+  const newSubs=(cat.subs||[]).map(s=> s===oldName ? newName : s);
+  cat.subs=newSubs; // 本地立即更新
+  db.ref(`${dbPath}/${fCategory}`).update({subs:newSubs});
+  // 若目前表單正選中這個子類別，同步更新
+  if(fSub===oldName) fSub=newName;
+  renderSubTags(cat);
+  renderSubChips();
 }
 function addSub(){
   const v=document.getElementById("inp-newsub").value.trim();if(!v)return;
