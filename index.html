@@ -322,7 +322,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 <div id="split-cat-overlay" onclick="closeSplitCatPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;backdrop-filter:blur(6px)"></div>
 <div id="split-cat-picker" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:601;background:#13131C;border-top:1px solid var(--border);border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);max-height:70vh;overflow-y:auto">
   <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
-  <div style="font-size:12px;font-weight:600;color:var(--light);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">選擇類別</div>
+  <div id="split-cat-picker-title" style="font-size:12px;font-weight:600;color:var(--light);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">選擇類別</div>
   <div id="split-cat-picker-chips" class="chips"></div>
 </div>
 
@@ -1563,26 +1563,70 @@ function updateSplitTotalDisplay(){
 // ── 拆分列的類別選擇彈窗 ──────────────────────────────
 function openSplitCatPicker(rowId){
   splitPickingRowId=rowId;
-  const allCats=fType==="income"?incCategories:categories;
+  renderSplitCatPickerStep("category");
+}
+
+function renderSplitCatPickerStep(step, selectedCatId){
   const chipsEl=document.getElementById("split-cat-picker-chips");
+  const titleEl=document.getElementById("split-cat-picker-title");
   chipsEl.innerHTML="";
-  allCats.forEach(cat=>{
-    const btn=document.createElement("button");
-    btn.className="chip";
-    btn.style.cssText="padding:8px 14px;border-radius:20px;border:1.5px solid "+cat.color+"55;background:"+cat.color+"18;color:"+cat.color+";font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0 6px 8px 0";
-    btn.innerHTML=`${getIcon(cat.iconKey||"other",14,cat.color)} ${escHtml(cat.label)}`;
-    btn.onclick=()=>selectSplitCat(cat.id);
-    chipsEl.appendChild(btn);
-  });
+
+  if(step==="category"){
+    titleEl.textContent="選擇類別";
+    const allCats=fType==="income"?incCategories:categories;
+    allCats.forEach(cat=>{
+      const btn=document.createElement("button");
+      btn.className="chip";
+      btn.style.cssText="padding:8px 14px;border-radius:20px;border:1.5px solid "+cat.color+"55;background:"+cat.color+"18;color:"+cat.color+";font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0 6px 8px 0";
+      btn.innerHTML=`${getIcon(cat.iconKey||"other",14,cat.color)} ${escHtml(cat.label)}`;
+      btn.onclick=()=>{
+        // 若有子類別，進入第二步；否則直接選定（不指定子類別）
+        if(cat.subs && cat.subs.length>0){
+          renderSplitCatPickerStep("sub", cat.id);
+        } else {
+          selectSplitCat(cat.id, "");
+        }
+      };
+      chipsEl.appendChild(btn);
+    });
+  } else if(step==="sub"){
+    const allCats=fType==="income"?incCategories:categories;
+    const cat=allCats.find(c=>c.id===selectedCatId);
+    if(!cat){ renderSplitCatPickerStep("category"); return; }
+    titleEl.innerHTML=`
+      <span onclick="renderSplitCatPickerStep('category')" style="cursor:pointer;color:var(--cyan);display:inline-flex;align-items:center;gap:4px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        返回
+      </span>
+      <span style="margin-left:10px;color:${cat.color}">${escHtml(cat.label)} · 選擇子類別</span>`;
+
+    // 不指定
+    const noneBtn=document.createElement("button");
+    noneBtn.className="chip";
+    noneBtn.style.cssText="padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin:0 6px 8px 0";
+    noneBtn.textContent="不指定";
+    noneBtn.onclick=()=>selectSplitCat(cat.id, "");
+    chipsEl.appendChild(noneBtn);
+
+    cat.subs.forEach(s=>{
+      const btn=document.createElement("button");
+      btn.className="chip";
+      btn.style.cssText="padding:8px 14px;border-radius:20px;border:1.5px solid "+cat.color+"55;background:"+cat.color+"18;color:"+cat.color+";font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin:0 6px 8px 0";
+      btn.textContent=s;
+      btn.onclick=()=>selectSplitCat(cat.id, s);
+      chipsEl.appendChild(btn);
+    });
+  }
+
   const overlay=document.getElementById("split-cat-overlay");
   const panel=document.getElementById("split-cat-picker");
   overlay.style.display="block"; panel.style.display="block";
   requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
 }
 
-function selectSplitCat(catId){
+function selectSplitCat(catId, sub){
   const row=splitRows.find(r=>r.id===splitPickingRowId);
-  if(row){ row.category=catId; row.sub=""; }
+  if(row){ row.category=catId; row.sub=sub||""; }
   closeSplitCatPicker();
   renderSplitRows();
 }
