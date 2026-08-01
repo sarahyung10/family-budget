@@ -210,7 +210,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
   <div>
     <div class="header-title">
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
-      <span style="font-size:9px;color:#4A5070;font-weight:600;letter-spacing:.5px;margin-left:6px;vertical-align:middle">v2026.07.23-3</span>
+      <span style="font-size:9px;color:#4A5070;font-weight:600;letter-spacing:.5px;margin-left:6px;vertical-align:middle">v2026.07.24-5</span>
     </div>
     <div class="header-last" id="header-last"></div>
   </div>
@@ -327,6 +327,26 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
   <div id="split-cat-picker-chips" class="chips"></div>
 </div>
 
+<!-- 分期／週期計畫管理面板 -->
+<div id="plan-manager-overlay" onclick="closePlanManager()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:700;backdrop-filter:blur(8px)"></div>
+<div id="plan-manager" style="display:none;position:fixed;left:0;right:0;bottom:0;top:60px;z-index:701;background:#0D0D12;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;box-shadow:0 -10px 50px rgba(0,0,0,.7)">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-size:16px;font-weight:700;color:#F0F2FF">分期／週期計畫管理</div>
+    <button onclick="closePlanManager()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;width:30px;height:30px;color:#8A90B8;cursor:pointer;display:flex;align-items:center;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- Tab 切換：分期 / 週期性 -->
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button id="plan-tab-inst" onclick="switchPlanTab('installment')" style="flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:rgba(0,229,255,.1);color:var(--cyan);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">分期計畫</button>
+    <button id="plan-tab-recur" onclick="switchPlanTab('recurring')" style="flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">週期性計畫</button>
+  </div>
+
+  <div id="plan-manager-list" style="display:flex;flex-direction:column;gap:10px;padding-bottom:20px"></div>
+</div>
+
 <div id="main">
   <div id="loading">載入中…</div>
 
@@ -367,7 +387,10 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
     </div>
 
     <div id="records-list">
-      <div class="list-header">明細記錄<span class="hint">← 左滑可編輯／刪除</span></div>
+      <div class="list-header">
+        明細記錄<span class="hint">← 左滑可編輯／刪除</span>
+        <span onclick="openPlanManager()" style="float:right;color:var(--cyan);font-size:10px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0">管理分期／週期計畫</span>
+      </div>
       <div id="records-inner"></div>
     </div>
   </div>
@@ -1375,6 +1398,109 @@ function deleteRecurringPlan(planId){
   window._recurPending=(window._recurPending||[]).filter(p=>p.planId!==planId);
   renderPendingSection(window._recurPending);
 }
+
+// ── 分期／週期計畫管理面板 ─────────────────────────────
+let currentPlanTab = "installment";
+
+function openPlanManager(){
+  const overlay=document.getElementById("plan-manager-overlay");
+  const panel=document.getElementById("plan-manager");
+  overlay.style.display="block"; panel.style.display="block";
+  requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
+  switchPlanTab(currentPlanTab);
+}
+
+function closePlanManager(){
+  const overlay=document.getElementById("plan-manager-overlay");
+  const panel=document.getElementById("plan-manager");
+  panel.style.transform="translateY(100%)";
+  setTimeout(()=>{ overlay.style.display="none"; panel.style.display="none"; },300);
+}
+
+function switchPlanTab(tab){
+  currentPlanTab=tab;
+  document.getElementById("plan-tab-inst").style.cssText =
+    tab==="installment"
+      ? "flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(0,229,255,.4);background:rgba(0,229,255,.1);color:var(--cyan);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer"
+      : "flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer";
+  document.getElementById("plan-tab-recur").style.cssText =
+    tab==="recurring"
+      ? "flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(168,85,247,.4);background:rgba(168,85,247,.1);color:#A855F7;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer"
+      : "flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer";
+
+  const listEl=document.getElementById("plan-manager-list");
+  listEl.innerHTML='<div style="text-align:center;color:var(--light);font-size:12px;padding:20px 0">載入中…</div>';
+
+  const dbPath = tab==="installment" ? "installments" : "recurring";
+  db.ref(dbPath).once("value", snap=>{
+    const plans=snap.val();
+    listEl.innerHTML="";
+    if(!plans){
+      listEl.innerHTML='<div style="text-align:center;color:var(--light);font-size:12px;padding:30px 0">目前沒有任何計畫</div>';
+      return;
+    }
+    const allCats=[...categories,...incCategories];
+    const entries=Object.entries(plans).sort((a,b)=>{
+      const tA = a[1].createdAt || parseInt(a[0].split("_")[1]) || 0;
+      const tB = b[1].createdAt || parseInt(b[0].split("_")[1]) || 0;
+      return tB - tA; // 新到舊
+    });
+
+    entries.forEach(([planId, plan])=>{
+      if(!plan) return;
+      const isSplitPlan = tab==="installment" ? (plan.splitRatio && plan.splitRatio.length>0) : (plan.isSplit && plan.defaultSplits);
+      const catLabel = isSplitPlan
+        ? (tab==="installment" ? plan.splitRatio : plan.defaultSplits).map(s=>allCats.find(c=>c.id===s.category)?.label??s.category).join("、")
+        : (allCats.find(c=>c.id===plan.category)?.label ?? plan.category ?? "未分類");
+      const isActive = plan.active !== false;
+      const createdMs = plan.createdAt || (parseInt(String(planId).split("_")[1]) || null);
+      const createdStr = createdMs ? new Date(createdMs).toLocaleString("zh-TW",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
+
+      const card=document.createElement("div");
+      card.style.cssText=`padding:14px;border-radius:14px;background:${isActive?"rgba(255,255,255,.03)":"rgba(255,255,255,.015)"};border:1px solid ${isActive?"var(--border)":"rgba(255,255,255,.04)"};${isActive?"":"opacity:.5"}`;
+
+      const infoLine = tab==="installment"
+        ? `共${plan.totalMonths}期 · 每期NT$${(plan.perMonth||0).toLocaleString()} · 每月${plan.dayOfMonth}號 · 已產生${plan.generatedUpTo||1}期`
+        : `${(()=>{const n=plan.recurN||1,u=plan.recurUnit||"月";return(n===1&&u==="月"?"每月":n===1&&u==="年"?"每年":`每${n}${u}`)+" "+plan.dayOfMonth+"號";})()} · 預設NT$${(plan.defaultAmount||0).toLocaleString()}`;
+
+      card.innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:#F0F2FF;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(plan.note||"（無備註）")}${!isActive?' <span style="color:#F43F5E;font-size:10px;font-weight:500">已停用</span>':""}</div>
+            <div style="font-size:11px;color:#6A7098;margin-top:3px">${escHtml(catLabel)}</div>
+            <div style="font-size:10px;color:#4A5070;margin-top:3px">${infoLine}</div>
+            ${createdStr?`<div style="font-size:9px;color:#3A3D55;margin-top:3px">建立於 ${createdStr}</div>`:""}
+          </div>
+          <button onclick="deletePlanCompletely('${tab}','${planId}')" style="flex-shrink:0;width:32px;height:32px;border-radius:9px;border:none;background:rgba(244,63,94,.12);color:#F43F5E;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>`;
+      listEl.appendChild(card);
+    });
+  });
+}
+
+// 完整刪除一個計畫：計畫本身 + 所有已產生的相關記錄
+async function deletePlanCompletely(tab, planId){
+  const label = tab==="installment" ? "分期計畫" : "週期性計畫";
+  const linkField = tab==="installment" ? "installPlanId" : "recurPlanId";
+  const relatedCount = records.filter(r=>r[linkField]===planId).length;
+  const confirmMsg = relatedCount>0
+    ? `確定刪除此${label}？將同時刪除已產生的 ${relatedCount} 筆相關記錄，此動作無法復原。`
+    : `確定刪除此${label}？`;
+  if(!confirm(confirmMsg)) return;
+
+  const dbPath = tab==="installment" ? "installments" : "recurring";
+  await db.ref(dbPath+"/"+planId).remove();
+
+  // 找出並刪除所有相關記錄
+  const toDelete = records.filter(r=>r[linkField]===planId);
+  for(const r of toDelete){
+    await db.ref("records/"+r._key).remove();
+  }
+
+  switchPlanTab(tab); // 重新整理清單
+}
 function openConfirmModal(planId){
   const plan=(window._recurPending||[]).find(p=>p.planId===planId); if(!plan) return;
   confirmingPlan=plan;
@@ -1832,8 +1958,13 @@ function saveRecord(){
     }
     else if(editingKey){
       const idx=records.findIndex(r=>r._key===editingKey);
+      const oldRec = idx>-1 ? records[idx] : null;
       if(idx>-1) records[idx]={...records[idx],...baseRec};
       db.ref("records/"+editingKey).update(baseRec);
+      // 若這筆屬於分期計畫，同步更新計畫的備註，讓之後產生的新期數跟著改
+      if(oldRec && oldRec.installPlanId){
+        db.ref("installments/"+oldRec.installPlanId).update({note:baseRec.note});
+      }
     } else {
       records.unshift({_key:"_tmp_"+Date.now(),...baseRec});
       db.ref("records").push(baseRec);
@@ -1880,8 +2011,13 @@ function saveRecord(){
     db.ref("installments/"+planId).update({generatedUpTo:1});
   } else if(editingKey){
     const idx=records.findIndex(r=>r._key===editingKey);
+    const oldRec = idx>-1 ? records[idx] : null;
     if(idx>-1) records[idx]={...records[idx],...baseRec};
     db.ref("records/"+editingKey).update(baseRec);
+    // 若這筆屬於分期計畫，同步更新計畫的備註，讓之後產生的新期數跟著改
+    if(oldRec && oldRec.installPlanId){
+      db.ref("installments/"+oldRec.installPlanId).update({note:baseRec.note});
+    }
   } else {
     records.unshift({_key:"_tmp_"+Date.now(),...baseRec});
     db.ref("records").push(baseRec);
@@ -1912,6 +2048,7 @@ function checkInstallmentPlans(){
 
     Object.entries(plans).forEach(async ([planId, plan])=>{
       if(!plan || !plan.totalMonths) return;
+      if(plan.active===false) return; // 已被刪除記錄時停用，不再產生後續期數
       if(_installmentCheckInProgress.has(planId)) return; // 防止併發重複處理
 
       const dayOfMonth = parseInt(plan.dayOfMonth) || 1;
@@ -1968,7 +2105,7 @@ function checkInstallmentPlans(){
 function startEdit(r){
   editingKey=r._key;
   fType=r.type||"expense";
-  fUser=r.user||"me"; fPayment=r.payment||"cash";
+  fUser=r.user||"me";
   const cats=fType==="income"?incCategories:categories;
   fCategory=r.category||(cats[0]?.id??""); fSub=r.sub||"";
   document.getElementById("inp-amount").value=r.amount||"";
@@ -1989,10 +2126,46 @@ function startEdit(r){
   updateSplitToggleUI();
   if(isSplitMode) renderSplitRows();
 
+  // 先設定付款方式（這會控制分期/週期性欄位的顯示/隱藏）
+  setPayment(r.payment||"cash");
+
+  // 還原分期狀態（若這筆記錄本身屬於某個分期計畫）
+  fInstall = !!r.installPlanId;
+  if(fInstall){
+    fInstMonths = r.installTotal || 0;
+    fInstDay = r.installDay || new Date(r.date).getDate() || 1;
+  } else {
+    fInstMonths = 0;
+  }
+  updateInstallToggleUI();
+  if(fInstall){
+    // 標記對應期數按鈕、更新預覽（編輯既有分期記錄時僅供檢視，不會重新建立計畫）
+    setTimeout(()=>{
+      document.querySelectorAll(".inst-btn").forEach(b=>{
+        b.className="inst-btn"+(parseInt(b.textContent)===fInstMonths?" active":"");
+      });
+      updateInstPreview();
+    }, 50);
+  }
+
+  // 還原週期性狀態
+  fRecur = !!r.recurPlanId;
+  updateRecurToggleUI();
+
   renderFormUI(); showView("add");
 }
 function deleteRecord(key){
-  if(confirm("確定刪除這筆記錄？")) db.ref("records/"+key).remove();
+  const rec = records.find(r=>r._key===key);
+  const isInstallment = rec && rec.installPlanId;
+  const confirmMsg = isInstallment
+    ? "這是分期記錄的其中一期，刪除後將同時停止此分期計畫，未來不會再產生後續期數。確定刪除？"
+    : "確定刪除這筆記錄？";
+  if(!confirm(confirmMsg)) return;
+  db.ref("records/"+key).remove();
+  if(isInstallment){
+    // 停用整個分期計畫，避免之後又自動產生後續期數
+    db.ref("installments/"+rec.installPlanId).update({active:false});
+  }
 }
 function handleEdit(key){const r=records.find(r=>r._key===key);if(r)startEdit(r);}
 
@@ -2366,12 +2539,15 @@ function renderRecords(f){
       inner.className="swipe-inner";
       // 同一天多筆時，非最後一筆加細分隔線
       if(!isLast) inner.style.borderBottom="1px solid rgba(255,255,255,.04)";
+      const installTotalHtml = r.installIndex && r.installTotalAmount
+        ? `<span style="color:#6A7098">總額 NT$${r.installTotalAmount.toLocaleString()}</span>`
+        : "";
       inner.innerHTML=`
         ${iconHtml}
         <div class="rec-info">
           <div class="rec-cat">${catLabelHtml}</div>
           <div class="rec-note-small">${escHtml(r.note==="－"?"":r.note)}</div>
-          <div class="rec-meta">${payIcon}</div>
+          <div class="rec-meta">${payIcon}${installTotalHtml?`<span>·</span>${installTotalHtml}`:""}</div>
         </div>
         <div class="rec-user" style="background:${user.color}18;color:${user.color}">${user.label}</div>
         ${isSplit?`<div class="recur-badge" style="background:rgba(168,85,247,.12);color:#A855F7;border-color:rgba(168,85,247,.25)">拆分</div>`:""}
