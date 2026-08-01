@@ -46,14 +46,14 @@ body::after{content:'';position:fixed;bottom:-30%;right:-10%;width:50%;height:60
 ::-webkit-scrollbar{width:2px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 
-#header{background:#0A0A0F;background-image:linear-gradient(rgba(10,10,15,.88),rgba(10,10,15,.88));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:var(--dark);padding-left:20px;padding-right:20px;padding-bottom:14px;padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 20px));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);width:100%;isolation:isolate}
+#header{background:#0A0A0F;background-image:linear-gradient(rgba(10,10,15,.88),rgba(10,10,15,.88));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:var(--dark);padding-left:16px;padding-right:16px;padding-bottom:14px;padding-top:max(60px,calc(env(safe-area-inset-top,0px) + 20px));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);width:100%;isolation:isolate;flex-wrap:nowrap;gap:8px}
 .header-title{font-size:20px;font-weight:700}
 .header-last{font-size:10px;color:var(--light);margin-top:3px;letter-spacing:.3px}
 .month-nav{display:flex;align-items:center;background:rgba(255,255,255,.05);border-radius:20px;padding:3px 6px;border:1px solid var(--border)}
 .arr{cursor:pointer;user-select:none;padding:3px 8px;opacity:.5;font-size:18px;line-height:1;transition:all .2s;color:var(--cyan)}
 .arr:hover,.arr:active{opacity:1}
 #month-label{font-size:11px;font-weight:600;min-width:80px;text-align:center;color:var(--dark);letter-spacing:.5px}
-.btn-add{background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:var(--glow-purple)}
+.btn-add{background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:var(--glow-purple);white-space:nowrap;flex-shrink:0}
 .btn-add.cancel{background:rgba(255,255,255,.06);color:var(--mid);box-shadow:none;border:1px solid var(--border)}
 .btn-add:active{transform:scale(.95)}
 
@@ -210,9 +210,9 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
   <div>
     <div class="header-title">
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
-      <span style="font-size:9px;color:#4A5070;font-weight:600;letter-spacing:.5px;margin-left:6px;vertical-align:middle">v2026.07.24-5</span>
     </div>
     <div class="header-last" id="header-last"></div>
+    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.24-7</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -363,6 +363,13 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
           <div class="total-col-lbl">支出</div>
           <div class="total-col-val" id="total-expense">0</div>
         </div>
+      </div>
+      <div id="pending-install-row" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:10px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          本月分期尚未入帳
+        </span>
+        <span id="pending-install-amount" style="font-size:13px;font-weight:700;color:#F59E0B">NT$0</span>
       </div>
     </div>
 
@@ -1796,6 +1803,8 @@ function openCalculator(){
   overlay.style.display="block"; panel.style.display="block";
   requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
   initCalcKeyFeedback();
+  // 防止點擊穿透到底下的表單元素（如日期選擇器）
+  document.getElementById("main").style.pointerEvents="none";
 }
 
 // 讓每顆按鍵在 touchstart 瞬間就有反應（零延遲），touchend/cancel 才移除
@@ -1821,6 +1830,7 @@ function closeCalculator(apply){
   const overlay=document.getElementById("calc-overlay");
   panel.style.transform="translateY(100%)";
   setTimeout(()=>{ panel.style.display="none"; overlay.style.display="none"; },260);
+  document.getElementById("main").style.pointerEvents="auto";
   if(apply){
     const val=calcEvaluate();
     document.getElementById("inp-amount").value = val || "";
@@ -1943,18 +1953,25 @@ function saveRecord(){
         amount: Math.round(perMonthTotal*ratio[i]*100)/100
       }));
       const startDate=baseRec.date;
+      const dayOfMonth = parseInt(fInstDay) || 1;
+      const [sy, smNum, sd] = startDate.split("-").map(Number);
       const plan = {
-        planId, totalMonths:fInstMonths, dayOfMonth:parseInt(fInstDay),
+        planId, totalMonths:fInstMonths, dayOfMonth,
         perMonth:perMonthTotal, totalAmount,
         note:baseRec.note, splitRatio:validSplits.map(s=>({category:s.category,sub:s.sub,ratio:s.amount/totalAmount})),
         user:fUser, type:fType, startDate,
         generatedUpTo:0
       };
       db.ref("installments/"+planId).set(plan);
-      const firstRec={...baseRec, amount:perMonthTotal, splits:perMonthSplits, installPlanId:planId, installIndex:1, installTotal:fInstMonths, installTotalAmount:totalAmount, date:startDate};
-      records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
-      db.ref("records").push(firstRec);
-      db.ref("installments/"+planId).update({generatedUpTo:1});
+      _installmentPlansCache = null;
+      // 只有記帳當天已達到或超過設定的扣款日，才立即產生第一期
+      if(sd >= dayOfMonth){
+        const firstDateStr = `${sy}-${String(smNum).padStart(2,"0")}-${String(dayOfMonth).padStart(2,"0")}`;
+        const firstRec={...baseRec, amount:perMonthTotal, splits:perMonthSplits, installPlanId:planId, installIndex:1, installTotal:fInstMonths, installTotalAmount:totalAmount, date:firstDateStr};
+        records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
+        db.ref("records").push(firstRec);
+        db.ref("installments/"+planId).update({generatedUpTo:1});
+      }
     }
     else if(editingKey){
       const idx=records.findIndex(r=>r._key===editingKey);
@@ -1996,19 +2013,27 @@ function saveRecord(){
     const planId = "inst_"+Date.now();
     const perMonth = Math.ceil(amount/fInstMonths);
     const startDate = baseRec.date;
+    const dayOfMonth = parseInt(fInstDay) || 1;
+    const [sy, smNum, sd] = startDate.split("-").map(Number);
     const plan = {
-      planId, totalMonths:fInstMonths, dayOfMonth:parseInt(fInstDay),
+      planId, totalMonths:fInstMonths, dayOfMonth,
       perMonth, totalAmount:amount,
       note:baseRec.note, category:fCategory, sub:fSub||"",
       user:fUser, type:fType, startDate,
       generatedUpTo: 0  // 已產生幾期
     };
     db.ref("installments/"+planId).set(plan);
-    // 立即產生第一期
-    const firstRec = {...baseRec, amount:perMonth, installPlanId:planId, installIndex:1, installTotal:fInstMonths, installTotalAmount:amount, date:startDate};
-    records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
-    db.ref("records").push(firstRec);
-    db.ref("installments/"+planId).update({generatedUpTo:1});
+    _installmentPlansCache = null;
+    // 只有記帳當天已達到或超過設定的扣款日，才立即產生第一期；
+    // 否則交由 checkInstallmentPlans 在扣款日當天自動產生
+    if(sd >= dayOfMonth){
+      const firstDateStr = `${sy}-${String(smNum).padStart(2,"0")}-${String(dayOfMonth).padStart(2,"0")}`;
+      const firstRec = {...baseRec, amount:perMonth, installPlanId:planId, installIndex:1, installTotal:fInstMonths, installTotalAmount:amount, date:firstDateStr};
+      records.unshift({_key:"_tmp_"+Date.now(),...firstRec});
+      db.ref("records").push(firstRec);
+      db.ref("installments/"+planId).update({generatedUpTo:1});
+    }
+    // 若 sd < dayOfMonth，generatedUpTo 保持 0，讓 checkInstallmentPlans 在扣款日當天補產生第一期
   } else if(editingKey){
     const idx=records.findIndex(r=>r._key===editingKey);
     const oldRec = idx>-1 ? records[idx] : null;
@@ -2059,8 +2084,8 @@ function checkInstallmentPlans(){
       // 計算目前應已到第幾期（從第1期算起）
       const monthsElapsed = (curYear - startYear)*12 + (curMonth - startMonth);
       let shouldHave = Math.min(monthsElapsed + 1, plan.totalMonths); // 含當月
-      // 若當月還沒到扣款日，這個月先不算
-      if(monthsElapsed>0 && curDay < dayOfMonth) shouldHave = Math.min(monthsElapsed, plan.totalMonths);
+      // 若當月還沒到扣款日，這個月先不算（含第一個月：起始月若還沒到扣款日，第1期也先不產生）
+      if(curDay < dayOfMonth) shouldHave = Math.min(monthsElapsed, plan.totalMonths);
       const alreadyHave = parseInt(plan.generatedUpTo) || 1;
 
       if(shouldHave <= alreadyHave) return; // 不需產生
@@ -2331,6 +2356,61 @@ function closeEditCat(){showView("add");renderCatChips();renderSubChips();}
 // ── 主畫面渲染 ────────────────────────────────────────
 let selectedCatFilter = null; // 目前篩選的類別 id
 
+// ── 本月分期尚未入帳金額 ──────────────────────────────
+let _installmentPlansCache = null;
+
+function updatePendingInstallmentAmount(){
+  const row=document.getElementById("pending-install-row");
+  const amountEl=document.getElementById("pending-install-amount");
+  if(!row) return;
+
+  const calc=(plansObj)=>{
+    if(!plansObj){ row.style.display="none"; return; }
+    const now=new Date();
+    const nowTwStr=toTaiwanDateStr(now);
+    const [curYear,curMonthNum,curDay]=nowTwStr.split("-").map(Number);
+    const curMonth=curMonthNum-1;
+    let pendingTotal=0;
+
+    Object.values(plansObj).forEach(plan=>{
+      if(!plan || plan.active===false || !plan.totalMonths) return;
+      const dayOfMonth=parseInt(plan.dayOfMonth)||1;
+      const [startYear,startMonthNum]=String(plan.startDate).split("-").map(Number);
+      const startMonth=startMonthNum-1;
+      const monthsElapsed=(curYear-startYear)*12+(curMonth-startMonth);
+      // 若本月落在分期期數範圍內（0 <= monthsElapsed < totalMonths）且扣款日還沒到
+      if(monthsElapsed>=0 && monthsElapsed<plan.totalMonths && curDay<dayOfMonth){
+        pendingTotal += plan.perMonth||0;
+      }
+    });
+
+    if(pendingTotal>0){
+      row.style.display="flex";
+      amountEl.textContent="NT$"+Math.round(pendingTotal).toLocaleString();
+    } else {
+      row.style.display="none";
+    }
+  };
+
+  // 只在檢視「本月」（等於今天所在月份）時才顯示，其他月份不適用「尚未入帳」概念
+  const now=new Date();
+  const nowTwStr=toTaiwanDateStr(now);
+  const [ty,tm]=nowTwStr.split("-").map(Number);
+  if(filterYear!==ty || filterMonth!==(tm-1)){
+    row.style.display="none";
+    return;
+  }
+
+  if(_installmentPlansCache){
+    calc(_installmentPlansCache);
+  } else {
+    db.ref("installments").once("value", snap=>{
+      _installmentPlansCache = snap.val();
+      calc(_installmentPlansCache);
+    });
+  }
+}
+
 function refreshAll(){
   if(view==="manage"){
     const cats=fType==="income"?incCategories:categories;
@@ -2354,6 +2434,7 @@ function refreshAll(){
   ) : tabF;
   renderRecords(recordsF);
   renderFilterBadge();
+  updatePendingInstallmentAmount();
 }
 
 function renderFilterBadge(){
