@@ -215,7 +215,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-3</div>
+    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-5</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -2634,7 +2634,7 @@ function updateBudgetDisplay(expTotalAll, monthRecords){
     const item=document.createElement("div");
     item.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:10px;color:rgba(255,255,255,.55)">${escHtml(b.name)} · NT$${limit.toLocaleString()}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.55)">${escHtml(b.name)} · NT$${Math.round(spent).toLocaleString()} / ${limit.toLocaleString()}</span>
         <span style="font-size:11px;font-weight:700;color:${textColor}">${percent}%</span>
       </div>
       <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden">
