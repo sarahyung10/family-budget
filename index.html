@@ -212,7 +212,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.24-7</div>
+    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.24-8</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -354,7 +354,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
     <div id="total-card">
       <div class="lbl" id="total-lbl">本月支出</div>
       <div id="total-amount">NT$ 0</div>
-      <div class="total-row">
+      <div class="total-row" style="display:none">
         <div class="total-col">
           <div class="total-col-lbl">收入</div>
           <div class="total-col-val inc" id="total-income">0</div>
@@ -364,7 +364,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
           <div class="total-col-val" id="total-expense">0</div>
         </div>
       </div>
-      <div id="pending-install-row" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between">
+      <div id="pending-install-row" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1);align-items:center;justify-content:space-between">
         <span style="font-size:10px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           本月分期尚未入帳
@@ -374,7 +374,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
     </div>
 
     <!-- Tab -->
-    <div class="tab-bar">
+    <div class="tab-bar" style="display:none">
       <button class="tab-btn active-exp" id="tab-exp" onclick="setTab('expense')">支　出</button>
       <button class="tab-btn" id="tab-inc" onclick="setTab('income')">收　入</button>
     </div>
@@ -408,8 +408,8 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       <div id="form-identity-badge" onclick="showIdentityModal()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;cursor:pointer;transition:background .15s;font-size:12px;font-weight:600" title="點擊切換身份"></div>
     </div>
 
-    <!-- 支出 / 收入 切換 -->
-    <div class="type-row">
+    <!-- 支出 / 收入 切換（已隱藏，只保留支出功能） -->
+    <div class="type-row" style="display:none">
       <button class="type-btn" id="type-exp" onclick="setType('expense')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
         支出
@@ -1499,6 +1499,7 @@ async function deletePlanCompletely(tab, planId){
 
   const dbPath = tab==="installment" ? "installments" : "recurring";
   await db.ref(dbPath+"/"+planId).remove();
+  if(tab==="installment") _installmentPlansCache = null;
 
   // 找出並刪除所有相關記錄
   const toDelete = records.filter(r=>r[linkField]===planId);
