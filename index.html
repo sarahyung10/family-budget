@@ -215,7 +215,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-1</div>
+    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-3</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -350,26 +350,55 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
   <div id="plan-manager-list" style="display:flex;flex-direction:column;gap:10px;padding-bottom:20px"></div>
 </div>
 
-<!-- 預算設定彈窗 -->
+<!-- 預算管理彈窗（清單） -->
 <div id="budget-overlay" onclick="closeBudgetSetting()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:700;backdrop-filter:blur(8px)"></div>
-<div id="budget-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);z-index:701;background:#13131C;border:1px solid rgba(168,85,247,.25);border-radius:22px;padding:26px 22px;width:310px;box-shadow:0 20px 60px rgba(0,0,0,.8);opacity:0;transition:all .25s ease">
-  <div style="font-size:15px;font-weight:700;color:#F0F2FF;margin-bottom:4px">設定月預算</div>
-  <div style="font-size:11px;color:#6A7098;margin-bottom:18px">本月支出超過此金額時會提醒你</div>
+<div id="budget-modal" style="display:none;position:fixed;left:0;right:0;bottom:0;top:60px;z-index:701;background:#0D0D12;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;box-shadow:0 -10px 50px rgba(0,0,0,.7)">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-size:16px;font-weight:700;color:#F0F2FF">預算提醒</div>
+    <button onclick="closeBudgetSetting()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;width:30px;height:30px;color:#8A90B8;cursor:pointer;display:flex;align-items:center;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div id="budget-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+
+  <button onclick="openBudgetEditor(null)" style="width:100%;padding:12px 0;background:rgba(168,85,247,.1);border:1px dashed rgba(168,85,247,.35);border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;color:#A855F7;cursor:pointer">+ 新增預算提醒</button>
+</div>
+
+<!-- 單一預算編輯彈窗 -->
+<div id="budget-editor-overlay" onclick="closeBudgetEditor()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;backdrop-filter:blur(10px)"></div>
+<div id="budget-editor" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);z-index:801;background:#13131C;border:1px solid rgba(168,85,247,.25);border-radius:22px;padding:24px 20px;width:320px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.85);opacity:0;transition:all .25s ease">
+  <div style="font-size:15px;font-weight:700;color:#F0F2FF;margin-bottom:16px" id="budget-editor-title">新增預算提醒</div>
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">名稱</div>
+  <input type="text" id="budget-name-input" placeholder="例如：吃喝玩樂預算"
+    style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.03);font-family:inherit;font-size:14px;color:#F0F2FF;margin-bottom:16px">
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+    包含類別 <span style="text-transform:none;font-weight:400;color:#4A5070">（可複選，不選則套用全部類別）</span>
+  </div>
+  <div id="budget-cat-chips" class="chips" style="margin-bottom:18px"></div>
 
   <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">預算金額（NT$）</div>
   <input type="text" id="budget-limit-input" placeholder="例如 20000" inputmode="numeric"
-    style="width:100%;padding:12px 14px;border:1px solid rgba(168,85,247,.25);border-radius:10px;background:rgba(168,85,247,.04);font-family:inherit;font-size:22px;font-weight:700;color:#F0F2FF;margin-bottom:16px">
+    style="width:100%;padding:12px 14px;border:1px solid rgba(168,85,247,.25);border-radius:10px;background:rgba(168,85,247,.04);font-family:inherit;font-size:22px;font-weight:700;color:#F0F2FF;margin-bottom:18px">
 
-  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">提醒門檻</div>
-  <div style="display:flex;gap:8px;margin-bottom:20px">
-    <button class="budget-threshold-btn" onclick="setBudgetThreshold(80)">80%</button>
-    <button class="budget-threshold-btn" onclick="setBudgetThreshold(90)">90%</button>
-    <button class="budget-threshold-btn" onclick="setBudgetThreshold(100)">100%</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase">提醒門檻</span>
+    <span id="budget-threshold-display" style="font-size:15px;font-weight:700;color:#A855F7">100%</span>
+  </div>
+  <input type="range" id="budget-threshold-slider" min="50" max="150" step="5" value="100"
+    oninput="onThresholdSliderInput(this.value)"
+    style="width:100%;margin-bottom:6px;accent-color:#A855F7">
+  <div style="display:flex;justify-content:space-between;font-size:9px;color:#4A5070;margin-bottom:20px">
+    <span>50%</span><span>100%</span><span>150%</span>
   </div>
 
   <div style="display:flex;gap:8px">
-    <button onclick="clearBudget()" style="flex:1;padding:12px 0;background:transparent;border:1px solid rgba(244,63,94,.3);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#F43F5E;cursor:pointer">停用</button>
-    <button onclick="saveBudgetSetting()" style="flex:2;padding:12px 0;background:linear-gradient(135deg,#7C3AED,#00B8D9);border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 0 16px rgba(124,58,237,.3)">儲存</button>
+    <button id="budget-delete-btn" onclick="deleteBudgetItem()" style="display:none;padding:12px 16px;background:transparent;border:1px solid rgba(244,63,94,.3);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#F43F5E;cursor:pointer">刪除</button>
+    <button onclick="closeBudgetEditor()" style="flex:1;padding:12px 0;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#6A7098;cursor:pointer">取消</button>
+    <button onclick="saveBudgetItem()" style="flex:2;padding:12px 0;background:linear-gradient(135deg,#7C3AED,#00B8D9);border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 0 16px rgba(124,58,237,.3)">儲存</button>
   </div>
 </div>
 
@@ -387,20 +416,8 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       </div>
       <div id="total-amount">NT$ 0</div>
 
-      <!-- 預算進度條 -->
-      <div id="budget-progress-wrap" style="display:none;margin-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:10px;color:rgba(255,255,255,.5)">月預算 NT$<span id="budget-limit-display">0</span></span>
-          <span id="budget-percent-display" style="font-size:11px;font-weight:700;color:#fff">0%</span>
-        </div>
-        <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden">
-          <div id="budget-progress-bar" style="height:100%;width:0%;border-radius:3px;transition:width .4s ease,background .4s ease"></div>
-        </div>
-        <div id="budget-warning-text" style="display:none;margin-top:8px;font-size:11px;color:#FCA5A5;display:flex;align-items:center;gap:5px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span id="budget-warning-msg">本月消費已超過預算，該省錢囉！</span>
-        </div>
-      </div>
+      <!-- 預算進度條（可能有多筆） -->
+      <div id="budget-progress-wrap" style="display:none;margin-top:12px;display:flex;flex-direction:column;gap:12px"></div>
 
       <div class="total-row" style="display:none">
         <div class="total-col">
@@ -421,17 +438,8 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       </div>
     </div>
 
-    <!-- 開啟 app 時的預算超支提醒（只顯示一次/每次進入本月時）-->
-    <div id="budget-alert-banner" style="display:none;margin:12px 16px 0;padding:13px 15px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:14px;display:flex;align-items:center;gap:10px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:700;color:#FCA5A5">本月消費超支提醒</div>
-        <div id="budget-alert-detail" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">已超出預算 NT$0</div>
-      </div>
-      <button onclick="dismissBudgetAlert()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;flex-shrink:0">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
+    <!-- 開啟 app 時的預算超支提醒（可能有多筆，每筆各自可關閉）-->
+    <div id="budget-alert-container" style="display:flex;flex-direction:column;gap:8px;margin:12px 16px 0"></div>
 
     <!-- Tab -->
     <div class="tab-bar" style="display:none">
@@ -1023,6 +1031,8 @@ function showView(v){
   const btn=document.getElementById("btn-add-top");
   btn.textContent=v==="dashboard"?"+ 記帳":"取消";
   btn.className  =v==="dashboard"?"btn-add":"btn-add cancel";
+  // 保險：每次切換畫面都強制恢復點擊，避免計算機面板未正常關閉導致的鎖死
+  document.getElementById("main").style.pointerEvents="auto";
 }
 function toggleAdd(){
   if(view==="dashboard"){resetForm();showView("add");}
@@ -2420,128 +2430,239 @@ let selectedCatFilter = null; // 目前篩選的類別 id
 // ── 本月分期尚未入帳金額 ──────────────────────────────
 let _installmentPlansCache = null;
 
-// ── 月預算功能 ────────────────────────────────────────
-let budgetSettings = { limit: 0, threshold: 100, active: false };
-let budgetAlertDismissedForMonth = null; // 記錄本次 session 已關閉提醒的月份key，避免重複打擾
-let _budgetThreshold = 100; // 設定彈窗中暫存的門檻值
+// ── 多預算功能（可選類別組合＋滑桿門檻）─────────────────
+let budgetItems = {};              // { budgetId: {name, categoryIds:[], limit, threshold, active} }
+let budgetAlertDismissed = {};      // { "monthKey_budgetId": true }
+let editingBudgetId = null;         // 目前正在編輯的預算 id（null=新增）
+let editingBudgetCatIds = [];       // 編輯中暫存的已選類別
 
-db.ref("budget").on("value", snap=>{
-  const val = snap.val();
-  budgetSettings = val ? { limit: val.limit||0, threshold: val.threshold||100, active: val.active!==false } : { limit:0, threshold:100, active:false };
+db.ref("budgets").on("value", snap=>{
+  budgetItems = snap.val() || {};
   if(view==="dashboard") refreshAll();
 });
 
+// ── 清單彈窗 ──────────────────────────────────────────
 function openBudgetSetting(){
-  document.getElementById("budget-limit-input").value = budgetSettings.limit || "";
-  _budgetThreshold = budgetSettings.threshold || 100;
-  updateThresholdButtonsUI();
+  renderBudgetList();
   const overlay=document.getElementById("budget-overlay");
   const modal=document.getElementById("budget-modal");
   overlay.style.display="block"; modal.style.display="block";
-  requestAnimationFrame(()=>{ modal.style.transform="translate(-50%,-50%) scale(1)"; modal.style.opacity="1"; });
+  requestAnimationFrame(()=>{ modal.style.transform="translateY(0)"; });
 }
 
 function closeBudgetSetting(){
   const overlay=document.getElementById("budget-overlay");
   const modal=document.getElementById("budget-modal");
-  modal.style.transform="translate(-50%,-50%) scale(.92)"; modal.style.opacity="0";
-  setTimeout(()=>{ overlay.style.display="none"; modal.style.display="none"; },220);
+  modal.style.transform="translateY(100%)";
+  setTimeout(()=>{ overlay.style.display="none"; modal.style.display="none"; },300);
 }
 
-function setBudgetThreshold(v){
-  _budgetThreshold = v;
-  updateThresholdButtonsUI();
-}
-
-function updateThresholdButtonsUI(){
-  document.querySelectorAll(".budget-threshold-btn").forEach(b=>{
-    const v = parseInt(b.textContent);
-    b.className = "budget-threshold-btn" + (v===_budgetThreshold ? " active" : "");
+function renderBudgetList(){
+  const listEl=document.getElementById("budget-list");
+  listEl.innerHTML="";
+  const entries=Object.entries(budgetItems);
+  if(entries.length===0){
+    listEl.innerHTML='<div style="text-align:center;color:var(--light);font-size:12px;padding:24px 0">尚未設定任何預算提醒</div>';
+    return;
+  }
+  entries.forEach(([id,b])=>{
+    const catNames = (b.categoryIds && b.categoryIds.length>0)
+      ? b.categoryIds.map(cid=>categories.find(c=>c.id===cid)?.label??cid).join("、")
+      : "所有類別";
+    const card=document.createElement("div");
+    card.style.cssText="padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);cursor:pointer";
+    card.onclick=()=>openBudgetEditor(id);
+    card.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;font-weight:600;color:#F0F2FF">${escHtml(b.name||"未命名預算")}</div>
+        <div style="font-size:13px;font-weight:700;color:#A855F7">NT$${(b.limit||0).toLocaleString()}</div>
+      </div>
+      <div style="font-size:11px;color:#6A7098;margin-top:4px">${escHtml(catNames)} · 門檻 ${b.threshold||100}%</div>`;
+    listEl.appendChild(card);
   });
 }
 
-function saveBudgetSetting(){
+// ── 單一預算編輯彈窗 ──────────────────────────────────
+function openBudgetEditor(budgetId){
+  editingBudgetId = budgetId;
+  const b = budgetId ? budgetItems[budgetId] : null;
+
+  document.getElementById("budget-editor-title").textContent = budgetId ? "編輯預算提醒" : "新增預算提醒";
+  document.getElementById("budget-name-input").value = b?.name || "";
+  document.getElementById("budget-limit-input").value = b?.limit || "";
+  editingBudgetCatIds = b?.categoryIds ? [...b.categoryIds] : [];
+
+  const threshold = b?.threshold || 100;
+  document.getElementById("budget-threshold-slider").value = threshold;
+  document.getElementById("budget-threshold-display").textContent = threshold + "%";
+
+  document.getElementById("budget-delete-btn").style.display = budgetId ? "block" : "none";
+
+  renderBudgetCatChips();
+
+  const overlay=document.getElementById("budget-editor-overlay");
+  const editor=document.getElementById("budget-editor");
+  overlay.style.display="block"; editor.style.display="block";
+  requestAnimationFrame(()=>{ editor.style.transform="translate(-50%,-50%) scale(1)"; editor.style.opacity="1"; });
+}
+
+function closeBudgetEditor(){
+  const overlay=document.getElementById("budget-editor-overlay");
+  const editor=document.getElementById("budget-editor");
+  editor.style.transform="translate(-50%,-50%) scale(.92)"; editor.style.opacity="0";
+  setTimeout(()=>{ overlay.style.display="none"; editor.style.display="none"; },220);
+}
+
+function renderBudgetCatChips(){
+  const el=document.getElementById("budget-cat-chips");
+  el.innerHTML="";
+  categories.forEach(cat=>{
+    const active = editingBudgetCatIds.includes(cat.id);
+    const btn=document.createElement("button");
+    btn.className="chip";
+    btn.style.cssText=`padding:7px 12px;border-radius:18px;border:1.5px solid ${active?cat.color:"var(--border)"};background:${active?cat.color+"20":"transparent"};color:${active?cat.color:"var(--mid)"};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0 6px 8px 0`;
+    btn.innerHTML=`${getIcon(cat.iconKey||"other",13,active?cat.color:"var(--mid)")} ${escHtml(cat.label)}`;
+    btn.onclick=()=>{
+      const idx=editingBudgetCatIds.indexOf(cat.id);
+      if(idx>-1) editingBudgetCatIds.splice(idx,1);
+      else editingBudgetCatIds.push(cat.id);
+      renderBudgetCatChips();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function onThresholdSliderInput(v){
+  document.getElementById("budget-threshold-display").textContent = v + "%";
+}
+
+function saveBudgetItem(){
+  const name = document.getElementById("budget-name-input").value.trim();
   const limit = parseFloat(document.getElementById("budget-limit-input").value);
+  const threshold = parseInt(document.getElementById("budget-threshold-slider").value);
+
   if(!limit || limit<=0){
     document.getElementById("budget-limit-input").focus();
     return;
   }
-  db.ref("budget").set({ limit, threshold:_budgetThreshold, active:true });
-  budgetAlertDismissedForMonth = null; // 重設，讓新設定的預算能立即觸發提醒
-  closeBudgetSetting();
+
+  const data = {
+    name: name || (editingBudgetCatIds.length>0
+      ? editingBudgetCatIds.map(cid=>categories.find(c=>c.id===cid)?.label??cid).join("+")
+      : "總預算"),
+    categoryIds: editingBudgetCatIds,
+    limit, threshold, active:true
+  };
+
+  const id = editingBudgetId || ("budget_"+Date.now());
+  db.ref("budgets/"+id).set(data);
+
+  // 重設提醒關閉紀錄，讓新設定能立即生效
+  const monthKey = `${filterYear}-${filterMonth}`;
+  delete budgetAlertDismissed[`${monthKey}_${id}`];
+
+  closeBudgetEditor();
+  renderBudgetList();
 }
 
-function clearBudget(){
-  if(!confirm("確定停用月預算提醒？")) return;
-  db.ref("budget").set({ limit:0, threshold:100, active:false });
-  closeBudgetSetting();
+function deleteBudgetItem(){
+  if(!editingBudgetId) return;
+  if(!confirm("確定刪除此預算提醒？")) return;
+  db.ref("budgets/"+editingBudgetId).remove();
+  closeBudgetEditor();
+  renderBudgetList();
 }
 
-function dismissBudgetAlert(){
-  const key = `${filterYear}-${filterMonth}`;
-  budgetAlertDismissedForMonth = key;
-  document.getElementById("budget-alert-banner").style.display="none";
+// ── 主畫面顯示邏輯（進度條 + 超支橫幅，支援多筆）───────
+function dismissBudgetAlert(budgetId){
+  const monthKey = `${filterYear}-${filterMonth}`;
+  budgetAlertDismissed[`${monthKey}_${budgetId}`] = true;
+  const el=document.getElementById("alert-"+budgetId);
+  if(el) el.remove();
 }
 
-function updateBudgetDisplay(expTotal){
+function updateBudgetDisplay(expTotalAll, monthRecords){
   const wrap=document.getElementById("budget-progress-wrap");
-  const banner=document.getElementById("budget-alert-banner");
+  const alertContainer=document.getElementById("budget-alert-container");
+  const entries=Object.entries(budgetItems).filter(([,b])=>b.active!==false && b.limit>0);
 
-  if(!budgetSettings.active || !budgetSettings.limit){
+  if(entries.length===0){
     wrap.style.display="none";
-    banner.style.display="none";
+    alertContainer.innerHTML="";
     return;
   }
 
-  const limit = budgetSettings.limit;
-  const threshold = budgetSettings.threshold || 100;
-  const percent = Math.min(Math.round((expTotal/limit)*100), 999);
-  const thresholdAmount = limit * (threshold/100);
-  const isOverThreshold = expTotal >= thresholdAmount;
-  const isOverBudget = expTotal > limit;
+  wrap.style.display="flex";
+  wrap.innerHTML="";
+  alertContainer.innerHTML="";
 
-  // 進度條
-  wrap.style.display="block";
-  document.getElementById("budget-limit-display").textContent = limit.toLocaleString();
-  document.getElementById("budget-percent-display").textContent = percent + "%";
-  document.getElementById("budget-percent-display").style.color = isOverBudget ? "#F43F5E" : isOverThreshold ? "#F59E0B" : "#fff";
-
-  const bar=document.getElementById("budget-progress-bar");
-  bar.style.width = Math.min(percent,100) + "%";
-  bar.style.background = isOverBudget
-    ? "linear-gradient(135deg,#F43F5E,#FB7185)"
-    : isOverThreshold
-      ? "linear-gradient(135deg,#F59E0B,#FBBF24)"
-      : "linear-gradient(135deg,#7C3AED,#00B8D9)";
-
-  const warnText=document.getElementById("budget-warning-text");
-  const warnMsg=document.getElementById("budget-warning-msg");
-  if(isOverThreshold){
-    warnText.style.display="flex";
-    warnMsg.textContent = isOverBudget
-      ? `已超出預算 NT$${Math.round(expTotal-limit).toLocaleString()}，該省錢囉！`
-      : `已達預算的 ${percent}%，注意控制花費囉`;
-  } else {
-    warnText.style.display="none";
-  }
-
-  // 開啟 app 時的提醒橫幅（只在超支且本月尚未關閉過時顯示）
-  const monthKey = `${filterYear}-${filterMonth}`;
   const now=new Date();
   const nowTwStr=toTaiwanDateStr(now);
   const [ty,tm]=nowTwStr.split("-").map(Number);
   const isCurrentMonth = filterYear===ty && filterMonth===(tm-1);
+  const monthKey = `${filterYear}-${filterMonth}`;
 
-  if(isOverThreshold && isCurrentMonth && budgetAlertDismissedForMonth!==monthKey){
-    banner.style.display="flex";
-    document.getElementById("budget-alert-detail").textContent = isOverBudget
-      ? `已超出預算 NT$${Math.round(expTotal-limit).toLocaleString()}`
-      : `已達預算的 ${percent}%（NT$${Math.round(thresholdAmount).toLocaleString()}）`;
-  } else {
-    banner.style.display="none";
-  }
+  entries.forEach(([id,b])=>{
+    // 計算此預算涵蓋類別的花費總和（若未指定類別，套用全部支出）
+    let spent = 0;
+    if(!b.categoryIds || b.categoryIds.length===0){
+      spent = expTotalAll;
+    } else {
+      monthRecords.forEach(r=>{
+        if(r.splits && r.splits.length>0){
+          r.splits.forEach(s=>{ if(b.categoryIds.includes(s.category)) spent += (s.amount||0); });
+        } else if(b.categoryIds.includes(r.category)){
+          spent += (r.amount||0);
+        }
+      });
+    }
+
+    const limit = b.limit;
+    const threshold = b.threshold || 100;
+    const percent = Math.min(Math.round((spent/limit)*100), 999);
+    const thresholdAmount = limit * (threshold/100);
+    const isOverThreshold = spent >= thresholdAmount;
+    const isOverBudget = spent > limit;
+    const barColor = isOverBudget
+      ? "linear-gradient(135deg,#F43F5E,#FB7185)"
+      : isOverThreshold
+        ? "linear-gradient(135deg,#F59E0B,#FBBF24)"
+        : "linear-gradient(135deg,#7C3AED,#00B8D9)";
+    const textColor = isOverBudget ? "#F43F5E" : isOverThreshold ? "#F59E0B" : "#fff";
+
+    // 進度條
+    const item=document.createElement("div");
+    item.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:10px;color:rgba(255,255,255,.55)">${escHtml(b.name)} · NT$${limit.toLocaleString()}</span>
+        <span style="font-size:11px;font-weight:700;color:${textColor}">${percent}%</span>
+      </div>
+      <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden">
+        <div style="height:100%;width:${Math.min(percent,100)}%;border-radius:3px;background:${barColor};transition:width .4s ease"></div>
+      </div>`;
+    wrap.appendChild(item);
+
+    // 超支橫幅（只在本月、超過門檻、且尚未關閉時顯示）
+    if(isOverThreshold && isCurrentMonth && !budgetAlertDismissed[`${monthKey}_${id}`]){
+      const banner=document.createElement("div");
+      banner.id = "alert-"+id;
+      banner.style.cssText="padding:13px 15px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:14px;display:flex;align-items:center;gap:10px";
+      const detailText = isOverBudget
+        ? `已超出預算 NT$${Math.round(spent-limit).toLocaleString()}`
+        : `已達預算的 ${percent}%（NT$${Math.round(thresholdAmount).toLocaleString()}）`;
+      banner.innerHTML=`
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:#FCA5A5">${escHtml(b.name)}超支提醒</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">${detailText}</div>
+        </div>
+        <button onclick="dismissBudgetAlert('${id}')" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`;
+      alertContainer.appendChild(banner);
+    }
+  });
 }
-
 
 function updatePendingInstallmentAmount(){
   const row=document.getElementById("pending-install-row");
@@ -2619,7 +2740,8 @@ function refreshAll(){
   renderRecords(recordsF);
   renderFilterBadge();
   updatePendingInstallmentAmount();
-  updateBudgetDisplay(expTotal);
+  const expRecords = f.filter(r=>r.type!=="income");
+  updateBudgetDisplay(expTotal, expRecords);
 }
 
 function renderFilterBadge(){
