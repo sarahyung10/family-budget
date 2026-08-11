@@ -215,7 +215,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-5</div>
+    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-6</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -1863,7 +1863,12 @@ function closeSplitCatPicker(){
   setTimeout(()=>{ panel.style.display="none"; overlay.style.display="none"; },260);
 }
 
+let _calcCloseTimer = null;
+
 function openCalculator(){
+  // 取消任何正在進行的關閉動畫，避免競態導致面板卡在錯誤狀態
+  if(_calcCloseTimer){ clearTimeout(_calcCloseTimer); _calcCloseTimer=null; }
+
   const existing=document.getElementById("inp-amount").value;
   calcTokens=[];
   calcCurrent = existing && existing!=="0" ? existing : "0";
@@ -1871,9 +1876,17 @@ function openCalculator(){
   updateCalcDisplay();
   const overlay=document.getElementById("calc-overlay");
   const panel=document.getElementById("calc-panel");
+  // 先重置 transition，強制瀏覽器套用 display:block，再啟動滑入動畫
+  panel.style.transition="none";
   overlay.style.display="block"; panel.style.display="block";
+  panel.style.transform="translateY(100%)";
+  // 強制 reflow，確保上面的 transform 生效後再啟動動畫，避免動畫被跳過
+  void panel.offsetHeight;
+  panel.style.transition="transform .28s cubic-bezier(.25,.46,.45,.94)";
   requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
   initCalcKeyFeedback();
+  // 清除任何殘留的按壓狀態，避免上次未正確觸發 touchend 導致按鍵卡在 pressed 樣式
+  document.querySelectorAll(".calc-key.pressed").forEach(k=>k.classList.remove("pressed"));
   // 防止點擊穿透到底下的表單元素（如日期選擇器）
   document.getElementById("main").style.pointerEvents="none";
 }
@@ -1900,7 +1913,11 @@ function closeCalculator(apply){
   const panel=document.getElementById("calc-panel");
   const overlay=document.getElementById("calc-overlay");
   panel.style.transform="translateY(100%)";
-  setTimeout(()=>{ panel.style.display="none"; overlay.style.display="none"; },260);
+  if(_calcCloseTimer) clearTimeout(_calcCloseTimer);
+  _calcCloseTimer = setTimeout(()=>{
+    panel.style.display="none"; overlay.style.display="none";
+    _calcCloseTimer=null;
+  },260);
   document.getElementById("main").style.pointerEvents="auto";
   if(apply){
     const val=calcEvaluate();
