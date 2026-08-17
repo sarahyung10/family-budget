@@ -173,13 +173,13 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 .recur-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(168,85,247,.12);color:#A855F7;border:1px solid rgba(168,85,247,.25);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
 .pending-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.25);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
 /* 計算機鍵盤 */
-.calc-key{padding:18px 0;border:none;border-radius:14px;background:rgba(255,255,255,.05);color:#F0F2FF;font-family:'Inter',sans-serif;font-size:20px;font-weight:600;cursor:pointer;transition:transform .08s ease-out,background-color .08s ease-out;-webkit-tap-highlight-color:transparent;touch-action:manipulation;will-change:transform}
-.calc-key.pressed{background:rgba(255,255,255,.16)!important;transform:scale(.92)!important;transition:transform .04s ease-out,background-color .04s ease-out}
+.calc-key{padding:18px 0;border:none;border-radius:14px;background:rgba(255,255,255,.05);color:#F0F2FF;font-family:'Inter',sans-serif;font-size:20px;font-weight:600;cursor:pointer;transition:transform .08s ease-out,background-color .08s ease-out;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.calc-key:active{background:rgba(255,255,255,.16);transform:scale(.92);transition:transform .04s ease-out,background-color .04s ease-out}
 .calc-key.calc-fn{background:rgba(255,255,255,.03);color:#8A90B8;font-size:16px}
 .calc-key.calc-op{background:rgba(0,229,255,.08);color:var(--cyan);font-size:22px}
-.calc-key.calc-op.pressed{background:rgba(0,229,255,.22)!important}
+.calc-key.calc-op:active{background:rgba(0,229,255,.22)}
 .calc-key.calc-confirm{background:linear-gradient(135deg,var(--purple2),var(--cyan2));color:#fff;font-size:16px;font-weight:700;box-shadow:0 0 16px rgba(124,58,237,.3)}
-.calc-key.calc-confirm.pressed{opacity:.85;box-shadow:0 0 10px rgba(124,58,237,.4)!important}
+.calc-key.calc-confirm:active{opacity:.85;box-shadow:0 0 10px rgba(124,58,237,.4)}
 
 /* 拆分項目列 */
 .split-row{display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:8px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--radius-sm);max-width:100%;overflow:hidden;box-sizing:border-box}
@@ -215,7 +215,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
       <span style="font-family:'Noto Serif TC','Source Han Serif TC',serif;font-size:20px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 0%,var(--cyan) 70%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,229,255,.35))">Yu家記帳</span>
     </div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-6</div>
+    <div style="font-size:8px;color:#3A3D55;font-weight:600;letter-spacing:.3px;margin-top:1px">v2026.07.25-8</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -355,15 +355,27 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 <div id="budget-modal" style="display:none;position:fixed;left:0;right:0;bottom:0;top:60px;z-index:701;background:#0D0D12;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;box-shadow:0 -10px 50px rgba(0,0,0,.7)">
   <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div style="font-size:16px;font-weight:700;color:#F0F2FF">預算提醒</div>
+    <div style="font-size:16px;font-weight:700;color:#F0F2FF">提醒設定</div>
     <button onclick="closeBudgetSetting()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;width:30px;height:30px;color:#8A90B8;cursor:pointer;display:flex;align-items:center;justify-content:center">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
-  <div id="budget-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+  <!-- Tab 切換：預算 / 消費習慣 -->
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button id="reminder-tab-budget" onclick="switchReminderTab('budget')" style="flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(168,85,247,.4);background:rgba(168,85,247,.1);color:#A855F7;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">預算</button>
+    <button id="reminder-tab-habit" onclick="switchReminderTab('habit')" style="flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">消費習慣</button>
+  </div>
 
-  <button onclick="openBudgetEditor(null)" style="width:100%;padding:12px 0;background:rgba(168,85,247,.1);border:1px dashed rgba(168,85,247,.35);border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;color:#A855F7;cursor:pointer">+ 新增預算提醒</button>
+  <div id="budget-list-section">
+    <div id="budget-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <button onclick="openBudgetEditor(null)" style="width:100%;padding:12px 0;background:rgba(168,85,247,.1);border:1px dashed rgba(168,85,247,.35);border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;color:#A855F7;cursor:pointer">+ 新增預算提醒</button>
+  </div>
+
+  <div id="habit-list-section" style="display:none">
+    <div id="habit-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <button onclick="openHabitEditor(null)" style="width:100%;padding:12px 0;background:rgba(0,229,255,.08);border:1px dashed rgba(0,229,255,.35);border-radius:12px;font-family:inherit;font-size:13px;font-weight:600;color:var(--cyan);cursor:pointer">+ 新增消費習慣提醒</button>
+  </div>
 </div>
 
 <!-- 單一預算編輯彈窗 -->
@@ -402,6 +414,43 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
   </div>
 </div>
 
+<!-- 單一消費習慣提醒編輯彈窗 -->
+<div id="habit-editor-overlay" onclick="closeHabitEditor()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;backdrop-filter:blur(10px)"></div>
+<div id="habit-editor" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);z-index:801;background:#13131C;border:1px solid rgba(0,229,255,.25);border-radius:22px;padding:24px 20px;width:320px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.85);opacity:0;transition:all .25s ease">
+  <div style="font-size:15px;font-weight:700;color:#F0F2FF;margin-bottom:4px" id="habit-editor-title">新增消費習慣提醒</div>
+  <div style="font-size:11px;color:#6A7098;margin-bottom:16px">當單筆消費超過金額且累計次數達標時提醒</div>
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">名稱</div>
+  <input type="text" id="habit-name-input" placeholder="例如：外食超支提醒"
+    style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.03);font-family:inherit;font-size:14px;color:#F0F2FF;margin-bottom:16px">
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">類別</div>
+  <div id="habit-cat-chips" class="chips" style="margin-bottom:14px"></div>
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+    包含子類別 <span style="text-transform:none;font-weight:400;color:#4A5070">（可複選，不選則套用該類別全部）</span>
+  </div>
+  <div id="habit-sub-chips" class="chips" style="margin-bottom:18px"></div>
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">單筆金額超過（NT$）</div>
+  <input type="text" id="habit-amount-input" placeholder="例如 800" inputmode="numeric"
+    style="width:100%;padding:12px 14px;border:1px solid rgba(0,229,255,.25);border-radius:10px;background:rgba(0,229,255,.04);font-family:inherit;font-size:20px;font-weight:700;color:#F0F2FF;margin-bottom:16px">
+
+  <div style="font-size:10px;font-weight:600;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">本月累計次數達到</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <button onclick="adjustHabitCount(-1)" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:#F0F2FF;font-size:18px;cursor:pointer">－</button>
+    <div style="flex:1;text-align:center;font-size:22px;font-weight:700;color:#F0F2FF" id="habit-count-display">3</div>
+    <button onclick="adjustHabitCount(1)" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:#F0F2FF;font-size:18px;cursor:pointer">＋</button>
+    <span style="font-size:12px;color:var(--mid)">次</span>
+  </div>
+
+  <div style="display:flex;gap:8px">
+    <button id="habit-delete-btn" onclick="deleteHabitItem()" style="display:none;padding:12px 16px;background:transparent;border:1px solid rgba(244,63,94,.3);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#F43F5E;cursor:pointer">刪除</button>
+    <button onclick="closeHabitEditor()" style="flex:1;padding:12px 0;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;color:#6A7098;cursor:pointer">取消</button>
+    <button onclick="saveHabitItem()" style="flex:2;padding:12px 0;background:linear-gradient(135deg,#00B8D9,#3B82F6);border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 0 16px rgba(0,184,217,.3)">儲存</button>
+  </div>
+</div>
+
 <div id="main">
   <div id="loading">載入中…</div>
 
@@ -411,7 +460,7 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
         <div class="lbl" id="total-lbl">本月支出</div>
         <button onclick="openBudgetSetting()" style="background:rgba(255,255,255,.06);border:none;border-radius:8px;padding:4px 9px;color:rgba(255,255,255,.5);font-family:inherit;font-size:9px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          預算
+          提醒設定
         </button>
       </div>
       <div id="total-amount">NT$ 0</div>
@@ -440,6 +489,9 @@ input:focus{outline:none;border-color:rgba(0,229,255,.35);box-shadow:0 0 0 3px r
 
     <!-- 開啟 app 時的預算超支提醒（可能有多筆，每筆各自可關閉）-->
     <div id="budget-alert-container" style="display:flex;flex-direction:column;gap:8px;margin:12px 16px 0"></div>
+
+    <!-- 消費習慣提醒（次數+金額雙條件達標時顯示） -->
+    <div id="habit-alert-container" style="display:flex;flex-direction:column;gap:8px;margin:12px 16px 0"></div>
 
     <!-- Tab -->
     <div class="tab-bar" style="display:none">
@@ -1884,29 +1936,6 @@ function openCalculator(){
   void panel.offsetHeight;
   panel.style.transition="transform .28s cubic-bezier(.25,.46,.45,.94)";
   requestAnimationFrame(()=>{ panel.style.transform="translateY(0)"; });
-  initCalcKeyFeedback();
-  // 清除任何殘留的按壓狀態，避免上次未正確觸發 touchend 導致按鍵卡在 pressed 樣式
-  document.querySelectorAll(".calc-key.pressed").forEach(k=>k.classList.remove("pressed"));
-  // 防止點擊穿透到底下的表單元素（如日期選擇器）
-  document.getElementById("main").style.pointerEvents="none";
-}
-
-// 讓每顆按鍵在 touchstart 瞬間就有反應（零延遲），touchend/cancel 才移除
-let _calcFeedbackInit=false;
-function initCalcKeyFeedback(){
-  if(_calcFeedbackInit) return;
-  _calcFeedbackInit=true;
-  document.querySelectorAll(".calc-key").forEach(key=>{
-    const press=()=>{ key.classList.add("pressed"); if(navigator.vibrate) navigator.vibrate(1); };
-    const release=()=>key.classList.remove("pressed");
-    key.addEventListener("touchstart",press,{passive:true});
-    key.addEventListener("touchend",release,{passive:true});
-    key.addEventListener("touchcancel",release,{passive:true});
-    // 桌機測試用滑鼠事件
-    key.addEventListener("mousedown",press);
-    key.addEventListener("mouseup",release);
-    key.addEventListener("mouseleave",release);
-  });
 }
 
 function closeCalculator(apply){
@@ -1918,7 +1947,6 @@ function closeCalculator(apply){
     panel.style.display="none"; overlay.style.display="none";
     _calcCloseTimer=null;
   },260);
-  document.getElementById("main").style.pointerEvents="auto";
   if(apply){
     const val=calcEvaluate();
     document.getElementById("inp-amount").value = val || "";
@@ -2460,7 +2488,7 @@ db.ref("budgets").on("value", snap=>{
 
 // ── 清單彈窗 ──────────────────────────────────────────
 function openBudgetSetting(){
-  renderBudgetList();
+  switchReminderTab('budget');
   const overlay=document.getElementById("budget-overlay");
   const modal=document.getElementById("budget-modal");
   overlay.style.display="block"; modal.style.display="block";
@@ -2681,6 +2709,243 @@ function updateBudgetDisplay(expTotalAll, monthRecords){
   });
 }
 
+// ── Tab 切換：預算 / 消費習慣 ──────────────────────────
+function switchReminderTab(tab){
+  const budgetSection=document.getElementById("budget-list-section");
+  const habitSection=document.getElementById("habit-list-section");
+  const budgetTabBtn=document.getElementById("reminder-tab-budget");
+  const habitTabBtn=document.getElementById("reminder-tab-habit");
+
+  if(tab==="budget"){
+    budgetSection.style.display="block"; habitSection.style.display="none";
+    budgetTabBtn.style.cssText="flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(168,85,247,.4);background:rgba(168,85,247,.1);color:#A855F7;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer";
+    habitTabBtn.style.cssText="flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer";
+    renderBudgetList();
+  } else {
+    budgetSection.style.display="none"; habitSection.style.display="block";
+    habitTabBtn.style.cssText="flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(0,229,255,.4);background:rgba(0,229,255,.1);color:var(--cyan);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer";
+    budgetTabBtn.style.cssText="flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--mid);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer";
+    renderHabitList();
+  }
+}
+
+// ── 消費習慣提醒功能 ──────────────────────────────────
+let habitItems = {};
+let habitAlertDismissed = {};   // { "monthKey_habitId": true }
+let editingHabitId = null;
+let editingHabitCatId = "";     // 目前選的單一主類別
+let editingHabitSubIds = [];    // 已選子類別
+let editingHabitCount = 3;
+
+db.ref("habits").on("value", snap=>{
+  habitItems = snap.val() || {};
+  if(view==="dashboard") refreshAll();
+});
+
+function renderHabitList(){
+  const listEl=document.getElementById("habit-list");
+  listEl.innerHTML="";
+  const entries=Object.entries(habitItems);
+  if(entries.length===0){
+    listEl.innerHTML='<div style="text-align:center;color:var(--light);font-size:12px;padding:24px 0">尚未設定任何消費習慣提醒</div>';
+    return;
+  }
+  entries.forEach(([id,h])=>{
+    const cat = categories.find(c=>c.id===h.categoryId);
+    const subLabel = (h.subIds && h.subIds.length>0) ? h.subIds.join("、") : "全部子類別";
+    const card=document.createElement("div");
+    card.style.cssText="padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);cursor:pointer";
+    card.onclick=()=>openHabitEditor(id);
+    card.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;font-weight:600;color:#F0F2FF">${escHtml(h.name||"未命名提醒")}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--cyan)">單筆＞NT$${(h.amount||0).toLocaleString()}</div>
+      </div>
+      <div style="font-size:11px;color:#6A7098;margin-top:4px">${escHtml(cat?.label??h.categoryId??"")} · ${escHtml(subLabel)} · 累計${h.count||3}次提醒</div>`;
+    listEl.appendChild(card);
+  });
+}
+
+function openHabitEditor(habitId){
+  editingHabitId = habitId;
+  const h = habitId ? habitItems[habitId] : null;
+
+  document.getElementById("habit-editor-title").textContent = habitId ? "編輯消費習慣提醒" : "新增消費習慣提醒";
+  document.getElementById("habit-name-input").value = h?.name || "";
+  document.getElementById("habit-amount-input").value = h?.amount || "";
+  editingHabitCatId = h?.categoryId || (categories[0]?.id ?? "");
+  editingHabitSubIds = h?.subIds ? [...h.subIds] : [];
+  editingHabitCount = h?.count || 3;
+  document.getElementById("habit-count-display").textContent = editingHabitCount;
+
+  document.getElementById("habit-delete-btn").style.display = habitId ? "block" : "none";
+
+  renderHabitCatChips();
+  renderHabitSubChips();
+
+  const overlay=document.getElementById("habit-editor-overlay");
+  const editor=document.getElementById("habit-editor");
+  overlay.style.display="block"; editor.style.display="block";
+  requestAnimationFrame(()=>{ editor.style.transform="translate(-50%,-50%) scale(1)"; editor.style.opacity="1"; });
+}
+
+function closeHabitEditor(){
+  const overlay=document.getElementById("habit-editor-overlay");
+  const editor=document.getElementById("habit-editor");
+  editor.style.transform="translate(-50%,-50%) scale(.92)"; editor.style.opacity="0";
+  setTimeout(()=>{ overlay.style.display="none"; editor.style.display="none"; },220);
+}
+
+function renderHabitCatChips(){
+  const el=document.getElementById("habit-cat-chips");
+  el.innerHTML="";
+  categories.forEach(cat=>{
+    const active = editingHabitCatId===cat.id;
+    const btn=document.createElement("button");
+    btn.className="chip";
+    btn.style.cssText=`padding:7px 12px;border-radius:18px;border:1.5px solid ${active?cat.color:"var(--border)"};background:${active?cat.color+"20":"transparent"};color:${active?cat.color:"var(--mid)"};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0 6px 8px 0`;
+    btn.innerHTML=`${getIcon(cat.iconKey||"other",13,active?cat.color:"var(--mid)")} ${escHtml(cat.label)}`;
+    btn.onclick=()=>{
+      editingHabitCatId = cat.id;
+      editingHabitSubIds = []; // 換主類別時清空子類別選擇
+      renderHabitCatChips();
+      renderHabitSubChips();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function renderHabitSubChips(){
+  const el=document.getElementById("habit-sub-chips");
+  el.innerHTML="";
+  const cat = categories.find(c=>c.id===editingHabitCatId);
+  if(!cat || !cat.subs || cat.subs.length===0){
+    el.innerHTML='<span style="font-size:11px;color:#4A5070">此類別尚無子類別</span>';
+    return;
+  }
+  cat.subs.forEach(sub=>{
+    const active = editingHabitSubIds.includes(sub);
+    const btn=document.createElement("button");
+    btn.className="chip";
+    btn.style.cssText=`padding:6px 12px;border-radius:16px;border:1.5px solid ${active?"var(--cyan)":"var(--border)"};background:${active?"rgba(0,229,255,.12)":"transparent"};color:${active?"var(--cyan)":"var(--mid)"};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin:0 6px 8px 0`;
+    btn.textContent = sub;
+    btn.onclick=()=>{
+      const idx=editingHabitSubIds.indexOf(sub);
+      if(idx>-1) editingHabitSubIds.splice(idx,1);
+      else editingHabitSubIds.push(sub);
+      renderHabitSubChips();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function adjustHabitCount(delta){
+  editingHabitCount = Math.max(1, editingHabitCount + delta);
+  document.getElementById("habit-count-display").textContent = editingHabitCount;
+}
+
+function saveHabitItem(){
+  const name = document.getElementById("habit-name-input").value.trim();
+  const amount = parseFloat(document.getElementById("habit-amount-input").value);
+
+  if(!amount || amount<=0){
+    document.getElementById("habit-amount-input").focus();
+    return;
+  }
+  if(!editingHabitCatId){
+    return;
+  }
+
+  const catLabel = categories.find(c=>c.id===editingHabitCatId)?.label ?? editingHabitCatId;
+  const data = {
+    name: name || `${catLabel}超支提醒`,
+    categoryId: editingHabitCatId,
+    subIds: editingHabitSubIds,
+    amount, count: editingHabitCount, active:true
+  };
+
+  const id = editingHabitId || ("habit_"+Date.now());
+  db.ref("habits/"+id).set(data);
+
+  const monthKey = `${filterYear}-${filterMonth}`;
+  delete habitAlertDismissed[`${monthKey}_${id}`];
+
+  closeHabitEditor();
+  renderHabitList();
+}
+
+function deleteHabitItem(){
+  if(!editingHabitId) return;
+  if(!confirm("確定刪除此消費習慣提醒？")) return;
+  db.ref("habits/"+editingHabitId).remove();
+  closeHabitEditor();
+  renderHabitList();
+}
+
+function dismissHabitAlert(habitId){
+  const monthKey = `${filterYear}-${filterMonth}`;
+  habitAlertDismissed[`${monthKey}_${habitId}`] = true;
+  const el=document.getElementById("habit-alert-"+habitId);
+  if(el) el.remove();
+}
+
+// 檢查所有消費習慣提醒，計算符合條件的筆數與總額，決定是否顯示
+function updateHabitDisplay(monthExpenseRecords){
+  const container=document.getElementById("habit-alert-container");
+  container.innerHTML="";
+
+  const entries=Object.entries(habitItems).filter(([,h])=>h.active!==false && h.amount>0);
+  if(entries.length===0) return;
+
+  const now=new Date();
+  const nowTwStr=toTaiwanDateStr(now);
+  const [ty,tm]=nowTwStr.split("-").map(Number);
+  const isCurrentMonth = filterYear===ty && filterMonth===(tm-1);
+  if(!isCurrentMonth) return; // 只在檢視本月時提醒，概念上「累計次數」只對當下有意義
+
+  const monthKey = `${filterYear}-${filterMonth}`;
+
+  entries.forEach(([id,h])=>{
+    // 找出符合「該類別（＋子類別，若有指定）且單筆金額超過門檻」的記錄
+    const matched = monthExpenseRecords.filter(r=>{
+      const matchCat = r.category===h.categoryId;
+      const matchSub = (!h.subIds || h.subIds.length===0) || (r.sub && h.subIds.includes(r.sub));
+      const matchAmount = (r.amount||0) > h.amount;
+      // 拆分記錄：檢查其中屬於此類別的部分
+      if(r.splits && r.splits.length>0){
+        return r.splits.some(s=>{
+          const subOk = (!h.subIds || h.subIds.length===0) || (s.sub && h.subIds.includes(s.sub));
+          return s.category===h.categoryId && subOk && (s.amount||0)>h.amount;
+        });
+      }
+      return matchCat && matchSub && matchAmount;
+    });
+
+    if(matched.length >= h.count && !habitAlertDismissed[`${monthKey}_${id}`]){
+      const totalOver = matched.reduce((sum,r)=>{
+        if(r.splits && r.splits.length>0){
+          return sum + r.splits.filter(s=>s.category===h.categoryId && (s.amount||0)>h.amount).reduce((s2,s3)=>s2+(s3.amount||0),0);
+        }
+        return sum + (r.amount||0);
+      },0);
+
+      const banner=document.createElement("div");
+      banner.id = "habit-alert-"+id;
+      banner.style.cssText="padding:13px 15px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.3);border-radius:14px;display:flex;align-items:center;gap:10px";
+      banner.innerHTML=`
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:#67E8F9">${escHtml(h.name)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">本月已有 ${matched.length} 筆超過 NT$${h.amount.toLocaleString()}，共 NT$${totalOver.toLocaleString()}，該省錢囉！</div>
+        </div>
+        <button onclick="dismissHabitAlert('${id}')" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`;
+      container.appendChild(banner);
+    }
+  });
+}
+
 function updatePendingInstallmentAmount(){
   const row=document.getElementById("pending-install-row");
   const amountEl=document.getElementById("pending-install-amount");
@@ -2759,6 +3024,7 @@ function refreshAll(){
   updatePendingInstallmentAmount();
   const expRecords = f.filter(r=>r.type!=="income");
   updateBudgetDisplay(expTotal, expRecords);
+  updateHabitDisplay(expRecords);
 }
 
 function renderFilterBadge(){
