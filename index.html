@@ -230,7 +230,7 @@ input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--br
   <div>
     <div class="header-title">Yu 家記帳</div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:var(--pale);font-weight:500;letter-spacing:.2px;margin-top:1px">v2026.07.26-7</div>
+    <div style="font-size:8px;color:var(--pale);font-weight:500;letter-spacing:.2px;margin-top:1px">v2026.07.26-9</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -1403,19 +1403,21 @@ function buildDrum(id, items, defaultVal, onChange){
   for(let p=0;p<pad;p++){
     const sp=document.createElement("div"); sp.className="drum-item"; sp.style.pointerEvents="none"; el.appendChild(sp);
   }
-  // 初始滾到預設值
+  // 初始滾到預設值（+1 是因為前方有 2 個 pad 空白格，需讓該項目置中對準高亮區）
   const idx=items.indexOf(defaultVal);
-  el.scrollTop=idx*36;
+  el.scrollTop=(idx+1)*36;
 
   // 滾動結束後 snap 並讀值
   let timer;
   el.addEventListener("scroll",()=>{
     clearTimeout(timer);
     timer=setTimeout(()=>{
-      const i=Math.round(el.scrollTop/36);
-      el.scrollTo({top:i*36, behavior:"smooth"});
-      // 更新高亮
-      el.querySelectorAll(".drum-item").forEach((d,di)=>d.classList.toggle("selected",di-pad===i));
+      // scrollTop 對應的是 DOM 索引（含 pad），要減去 pad 才是 items 陣列的真實索引
+      const domIdx=Math.round(el.scrollTop/36);
+      const i=domIdx-1; // -1 抵銷初始滾動時 +1 的偏移，還原成 items 陣列的索引
+      el.scrollTo({top:domIdx*36, behavior:"smooth"});
+      // 更新高亮：DOM 中第 (pad+i) 個元素才是目前選中項
+      el.querySelectorAll(".drum-item").forEach((d,di)=>d.classList.toggle("selected",di===pad+i));
       const val=items[i];
       if(val!==undefined) onChange(val);
     },120);
@@ -1436,7 +1438,8 @@ function saveRecurringPlan(baseRec, amount){
     defaultAmount:amount, note:baseRec.note,
     category:baseRec.category, sub:baseRec.sub||"",
     user:baseRec.user, payment:baseRec.payment||"cash", recordType:baseRec.type||"expense",
-    startDate:baseRec.date, active:true, lastGeneratedDate:""
+    startDate:baseRec.date, active:true,
+    lastGeneratedDate:baseRec.date // 記帳當下已立即產生第一筆，視為本期已確認
   });
 }
 
@@ -1450,7 +1453,8 @@ function saveRecurringPlanSplit(baseRec, totalAmount, splits){
     defaultSplits: splits.map(s=>({category:s.category, sub:s.sub||"", amount:s.amount})),
     category:splits[0].category, sub:splits[0].sub||"",
     user:baseRec.user, payment:baseRec.payment||"cash", recordType:baseRec.type||"expense",
-    startDate:baseRec.date, active:true, lastGeneratedDate:""
+    startDate:baseRec.date, active:true,
+    lastGeneratedDate:baseRec.date // 記帳當下已立即產生第一筆，視為本期已確認
   });
 }
 
@@ -1511,9 +1515,9 @@ function renderPendingSection(pending){
       ? `<div style="width:40px;height:40px;border-radius:12px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8F4E35" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>`
       : `<div style="width:40px;height:40px;border-radius:12px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getIcon(cat.iconKey||"other",17,cat.color)}</div>`;
     const row=document.createElement("div");
-    row.style.cssText="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#1A140A;border:1px solid rgba(245,158,11,.2);border-radius:12px;margin-bottom:6px;cursor:pointer;transition:border-color .15s";
-    row.onmouseenter=()=>row.style.borderColor="rgba(245,158,11,.5)";
-    row.onmouseleave=()=>row.style.borderColor="rgba(245,158,11,.2)";
+    row.style.cssText="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#FBF2E3;border-radius:12px;margin-bottom:6px;cursor:pointer;transition:background-color .15s";
+    row.onmouseenter=()=>row.style.backgroundColor="#F7E8D0";
+    row.onmouseleave=()=>row.style.backgroundColor="#FBF2E3";
     row.onclick=()=>openConfirmModal(plan.planId);
     row.innerHTML=`
       ${iconHtml}
