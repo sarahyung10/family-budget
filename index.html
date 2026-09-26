@@ -230,7 +230,7 @@ input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--br
   <div>
     <div class="header-title">Yu 家記帳</div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:var(--pale);font-weight:500;letter-spacing:.2px;margin-top:1px">v2026.07.26-12</div>
+    <div style="font-size:8px;color:var(--pale);font-weight:500;letter-spacing:.2px;margin-top:1px">v2026.07.26-13</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -721,6 +721,10 @@ input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--br
           <span class="field-link" onclick="openFx()">外幣換算</span>
         </div>
         <input type="text" id="inp-amount" placeholder="0" readonly onclick="openCalculator()" style="cursor:pointer">
+        <div id="foreign-line" style="display:none;margin-top:6px;font-size:12px;color:var(--mid);align-items:center;gap:6px">
+          <span id="foreign-text" style="font-variant-numeric:tabular-nums"></span>
+          <span onclick="clearForeign()" style="color:var(--muted);cursor:pointer;padding:0 4px">✕</span>
+        </div>
       </div>
     </div>
 
@@ -1151,6 +1155,7 @@ const lastSel = { expense:{ category:"", sub:"" }, income:{ category:"", sub:"" 
 
 function resetForm(){
   editingKey=null;
+  fForeign=null; renderForeignLine();
   fUser = deviceUser || "me";
   fPayment="cash";
   fType="expense";
@@ -2013,6 +2018,7 @@ function closeCalculator(apply){
   if(apply){
     const val=calcEvaluate();
     document.getElementById("inp-amount").value = val || "";
+    clearForeign();
     if(typeof fInstall!=="undefined" && fInstall) updateInstPreview();
     if(typeof isSplitMode!=="undefined" && isSplitMode) updateSplitTotalDisplay();
   }
@@ -2198,10 +2204,27 @@ function updateFxResult(){
   bdEl.textContent = `${fxCurrency} ${r.amt.toLocaleString()} × ${r.rate}` + (r.withFee ? `　＋3% 手續費 NT$${Math.round(r.base*0.03).toLocaleString()}` : "");
 }
 
+// 目前表單帶入的原幣資訊（不含手續費），儲存時一併寫入記錄
+let fForeign = null; // {currency, amount}
+
+function renderForeignLine(){
+  const line=document.getElementById("foreign-line");
+  if(!line) return;
+  if(fForeign && fForeign.amount){
+    document.getElementById("foreign-text").textContent=`原幣 ${fForeign.currency} ${Number(fForeign.amount).toLocaleString()}`;
+    line.style.display="flex";
+  } else {
+    line.style.display="none";
+  }
+}
+function clearForeign(){ fForeign=null; renderForeignLine(); }
+
 function applyFx(){
   const r = calcFx();
   if(!r){ document.getElementById("fx-amount").focus(); return; }
   document.getElementById("inp-amount").value = r.total;
+  fForeign = { currency: fxCurrency, amount: r.amt };
+  renderForeignLine();
   if(typeof fInstall!=="undefined" && fInstall) updateInstPreview();
   closeFx();
 }
@@ -2268,7 +2291,8 @@ function saveRecord(){
       category:validSplits[0].category, sub:validSplits[0].sub, // 供舊邏輯相容（單一分類欄位取第一筆）
       note:document.getElementById("inp-note").value.trim()||"－",
       date:document.getElementById("inp-date").value||today(),
-      payment:fPayment, type:fType, timestamp:Date.now()
+      payment:fPayment, type:fType, timestamp:Date.now(),
+      foreign: fForeign || null
     };
 
     const btn=document.getElementById("btn-save");
@@ -2334,7 +2358,7 @@ function saveRecord(){
   const amount=parseFloat(document.getElementById("inp-amount").value);
   if(!amount||isNaN(amount)){document.getElementById("inp-amount").focus();return;}
 
-  const baseRec={user:fUser,category:fCategory,sub:fSub||"",amount,note:document.getElementById("inp-note").value.trim()||"－",date:document.getElementById("inp-date").value||today(),payment:fPayment,type:fType,timestamp:Date.now()};
+  const baseRec={user:fUser,category:fCategory,sub:fSub||"",amount,note:document.getElementById("inp-note").value.trim()||"－",date:document.getElementById("inp-date").value||today(),payment:fPayment,type:fType,timestamp:Date.now(),foreign:fForeign||null};
 
   const btn=document.getElementById("btn-save");
   btn.textContent="✓ 已儲存"; btn.className="btn-save saved";
@@ -2477,6 +2501,7 @@ function startEdit(r){
   const cats=fType==="income"?incCategories:categories;
   fCategory=r.category||(cats[0]?.id??""); fSub=r.sub||"";
   document.getElementById("inp-amount").value=r.amount||"";
+  fForeign = r.foreign || null; renderForeignLine();
   document.getElementById("inp-note").value=r.note==="－"?"":(r.note||"");
   document.getElementById("inp-date").value=r.date||today();
   document.getElementById("form-title").textContent="編輯記錄";
@@ -3477,7 +3502,10 @@ function renderRecords(f){
         ${isSplit?`<div class="recur-badge">拆分</div>`:""}
         ${r.installIndex?`<div class="inst-badge">${r.installIndex}／${r.installTotal}</div>`:""}
         ${r.recurPlanId&&!r.installIndex?`<div class="recur-badge">週期</div>`:""}
-        <div class="rec-amount${isIncome?" income":""}">${isIncome?"+":""}${(r.amount||0).toLocaleString()}</div>`;
+        <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0">
+          <div class="rec-amount${isIncome?" income":""}">${isIncome?"+":""}${(r.amount||0).toLocaleString()}</div>
+          ${r.foreign && r.foreign.amount ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums">${escHtml(r.foreign.currency)} ${Number(r.foreign.amount).toLocaleString()}</div>` : ""}
+        </div>`;
 
       // 滑動邏輯（順滑版）
       let startX=null,startY=null,lastX=null,lastT=null,offset=0,rafId=null,locked=false,isOpen=false;
