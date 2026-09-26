@@ -230,7 +230,7 @@ input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--br
   <div>
     <div class="header-title">Yu 家記帳</div>
     <div class="header-last" id="header-last"></div>
-    <div style="font-size:8px;color:var(--pale);font-weight:500;letter-spacing:.2px;margin-top:1px">v2026.07.26-11</div>
+    <div style="font-size:8px;color:var(--pale);font-weight:500;letter-spacing:.2px;margin-top:1px">v2026.07.26-12</div>
   </div>
   <div class="month-nav">
     <span class="arr" onclick="changeMonth(-1)">‹</span>
@@ -466,6 +466,41 @@ input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--br
   </div>
 </div>
 
+<!-- 外幣換算面板 -->
+<div id="fx-overlay" onclick="closeFx()" style="display:none;position:fixed;inset:0;background:rgba(43,41,38,.3);z-index:700"></div>
+<div id="fx-modal" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:701;background:#FFFFFF;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);box-shadow:0 -6px 28px rgba(43,41,38,.1);max-height:88vh;overflow-y:auto">
+  <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px"></div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px">
+    <div style="font-size:16px;font-weight:600;color:var(--dark)">外幣換算</div>
+    <div id="fx-status" style="font-size:11px;color:var(--muted)"></div>
+  </div>
+
+  <div class="field-label">幣別</div>
+  <div id="fx-currency-chips" class="chips" style="margin-bottom:16px"></div>
+
+  <div class="field-label">外幣金額</div>
+  <input type="text" id="fx-amount" inputmode="decimal" placeholder="0" autocomplete="off" oninput="updateFxResult()" style="font-size:22px;font-weight:600;margin-bottom:16px;font-variant-numeric:tabular-nums">
+
+  <div class="field-label">
+    <span id="fx-rate-label">匯率（1 外幣 = ? 台幣）</span>
+    <span class="field-link" onclick="fetchFxRates(true)">重新取得</span>
+  </div>
+  <input type="text" id="fx-rate" inputmode="decimal" autocomplete="off" oninput="updateFxResult()" style="margin-bottom:14px;font-variant-numeric:tabular-nums">
+
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mid);margin-bottom:6px;cursor:pointer">
+    <input type="checkbox" id="fx-fee" onchange="updateFxResult()" style="width:16px;height:16px;accent-color:#B4694A">
+    加收 3% 國外交易手續費（刷卡）
+  </label>
+
+  <div style="display:flex;justify-content:space-between;align-items:baseline;padding:16px 0 4px;margin-top:10px;border-top:1px solid var(--border-soft)">
+    <span style="font-size:12px;color:var(--mid)">約合台幣</span>
+    <span id="fx-result" style="font-family:-apple-system,'SF Pro Display',sans-serif;font-size:26px;font-weight:600;color:var(--dark);font-variant-numeric:tabular-nums;letter-spacing:-.2px">NT$0</span>
+  </div>
+  <div id="fx-breakdown" style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:18px;min-height:14px"></div>
+
+  <button class="btn-save" onclick="applyFx()">帶入金額</button>
+</div>
+
 <div id="main">
   <div id="loading">載入中…</div>
 
@@ -681,7 +716,10 @@ input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--br
         <div class="chips" id="sub-chips"></div>
       </div>
       <div class="field">
-        <div class="field-label">金額（NT$）</div>
+        <div class="field-label">
+          <span>金額（NT$）</span>
+          <span class="field-link" onclick="openFx()">外幣換算</span>
+        </div>
         <input type="text" id="inp-amount" placeholder="0" readonly onclick="openCalculator()" style="cursor:pointer">
       </div>
     </div>
@@ -2055,6 +2093,117 @@ function updateCalcDisplay(){
 function calcEnterOrApply(){
   if(calcTokens.length>0 && !calcResultShown){ calcEnter(); }
   else { closeCalculator(true); }
+}
+
+// ── 外幣換算 ──────────────────────────────────────────
+const FX_CURRENCIES=[
+  ["JPY","日圓"],["KRW","韓元"],["USD","美元"],["EUR","歐元"],["THB","泰銖"],["HKD","港幣"],
+  ["CNY","人民幣"],["SGD","新幣"],["GBP","英鎊"],["AUD","澳幣"],["VND","越南盾"],["MYR","馬幣"]
+];
+let fxCurrency = localStorage.getItem("fxCurrency") || "JPY";
+let fxRates = null;   // 以台幣為基準：1 TWD = rates[XXX] 外幣
+let fxUpdated = null;
+try{
+  const c = JSON.parse(localStorage.getItem("fxCache")||"null");
+  if(c && c.rates){ fxRates=c.rates; fxUpdated=c.time; }
+}catch(e){}
+
+function openFx(){
+  document.getElementById("fx-amount").value="";
+  // 目前付款方式是刷卡時，預設勾選 3% 手續費
+  document.getElementById("fx-fee").checked = (fPayment==="card");
+  renderFxChips();
+  applyFxRateToInput();
+  updateFxResult();
+  const overlay=document.getElementById("fx-overlay"), modal=document.getElementById("fx-modal");
+  overlay.style.display="block"; modal.style.display="block";
+  requestAnimationFrame(()=>{ modal.style.transform="translateY(0)"; });
+  // 沒有匯率或超過 6 小時就重新抓
+  if(!fxRates || !fxUpdated || Date.now()-fxUpdated > 6*3600*1000) fetchFxRates(false);
+}
+
+function closeFx(){
+  const overlay=document.getElementById("fx-overlay"), modal=document.getElementById("fx-modal");
+  modal.style.transform="translateY(100%)";
+  setTimeout(()=>{ modal.style.display="none"; overlay.style.display="none"; },280);
+}
+
+function renderFxChips(){
+  const el=document.getElementById("fx-currency-chips");
+  el.innerHTML="";
+  FX_CURRENCIES.forEach(([code,label])=>{
+    const active = code===fxCurrency;
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="sub-chip";
+    btn.textContent=`${label} ${code}`;
+    if(active){ btn.style.borderColor="#B4694A"; btn.style.background="#F1E4DC"; btn.style.color="#8F4E35"; }
+    btn.onclick=()=>{
+      fxCurrency=code;
+      localStorage.setItem("fxCurrency",code);
+      renderFxChips(); applyFxRateToInput(); updateFxResult();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function applyFxRateToInput(){
+  const label = FX_CURRENCIES.find(c=>c[0]===fxCurrency)?.[1] || fxCurrency;
+  document.getElementById("fx-rate-label").textContent=`匯率（1 ${label} = ? 台幣）`;
+  const st=document.getElementById("fx-status");
+  if(fxRates && fxRates[fxCurrency]){
+    const rate = 1/fxRates[fxCurrency];
+    document.getElementById("fx-rate").value = Number(rate.toPrecision(4)).toString();
+    const d=new Date(fxUpdated);
+    st.textContent=`匯率更新於 ${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  } else {
+    document.getElementById("fx-rate").value="";
+    st.textContent="尚未取得匯率";
+  }
+}
+
+async function fetchFxRates(manual){
+  const st=document.getElementById("fx-status");
+  st.textContent="取得匯率中…";
+  try{
+    const res = await fetch("https://open.er-api.com/v6/latest/TWD");
+    const data = await res.json();
+    if(data.result!=="success" || !data.rates) throw new Error("bad response");
+    fxRates = data.rates;
+    fxUpdated = Date.now();
+    localStorage.setItem("fxCache", JSON.stringify({rates:fxRates, time:fxUpdated}));
+    applyFxRateToInput();
+    updateFxResult();
+  }catch(e){
+    st.textContent = fxRates ? "無法連線，使用上次的匯率" : "無法取得匯率，請手動輸入";
+  }
+}
+
+function calcFx(){
+  const amt = parseFloat(document.getElementById("fx-amount").value);
+  const rate = parseFloat(document.getElementById("fx-rate").value);
+  const withFee = document.getElementById("fx-fee").checked;
+  if(!amt || !rate || isNaN(amt) || isNaN(rate)) return null;
+  const base = amt*rate;
+  const total = withFee ? base*1.03 : base;
+  return { amt, rate, withFee, base, total:Math.round(total) };
+}
+
+function updateFxResult(){
+  const r = calcFx();
+  const resultEl=document.getElementById("fx-result");
+  const bdEl=document.getElementById("fx-breakdown");
+  if(!r){ resultEl.textContent="NT$0"; bdEl.textContent=""; return; }
+  resultEl.textContent = "NT$"+r.total.toLocaleString();
+  bdEl.textContent = `${fxCurrency} ${r.amt.toLocaleString()} × ${r.rate}` + (r.withFee ? `　＋3% 手續費 NT$${Math.round(r.base*0.03).toLocaleString()}` : "");
+}
+
+function applyFx(){
+  const r = calcFx();
+  if(!r){ document.getElementById("fx-amount").focus(); return; }
+  document.getElementById("inp-amount").value = r.total;
+  if(typeof fInstall!=="undefined" && fInstall) updateInstPreview();
+  closeFx();
 }
 
 // ── 備註自動建議：依目前選中的類別，列出最近使用過的備註（去重，最多10個）──
